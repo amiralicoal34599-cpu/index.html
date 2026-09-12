@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>سوپر اپلیکیشن تلگرام</title>
+    <!-- اسکریپت رسمی وب‌اپ تلگرام -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- آیکون‌های مدرن FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- فونت وزیرمتن برای ظاهر بسیار شیک -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.12);
+            --primary-glow: #6366f1;
+            --secondary-glow: #a855f7;
+            --accent-gold: #f59e0b;
+            --text-main: #ffffff;
+            --text-sub: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
+            color: var(--text-main);
+            font-family: 'Vazirmatn', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-x: hidden;
+            padding-bottom: 90px;
+        }
+
+        /* کانتینر اصلی */
+        .container {
+            padding: 16px;
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        /* کارت پروفایل سه‌بعدی و مدرن */
+        .profile-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .profile-card:active {
+            transform: scale(0.98);
+        }
+
+        .avatar-wrapper {
+            position: relative;
+        }
+
+        .avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .badge-vip {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            background: var(--accent-gold);
+            color: #000;
+            font-size: 10px;
+            font-weight: 900;
+            padding: 2px 6px;
+            border-radius: 10px;
+            box-shadow: 0 0 8px var(--accent-gold);
+        }
+
+        .user-details {
+            flex-grow: 1;
+        }
+
+        .user-name {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .user-id {
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-top: 2px;
+        }
+
+        /* کارت امتیاز و دارایی */
+        .score-box {
+            margin-top: 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 16px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .score-title {
+            font-size: 13px;
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .score-value {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--accent-gold);
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+        }
+
+        /* دکمه‌های آکاردئونی و منوی کاربردی */
+        .section-title {
+            font-size: 14px;
+            color: var(--text-sub);
+            margin: 20px 4px 10px 4px;
+            font-weight: 700;
+        }
+
+        .grid-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .action-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .action-card:active {
+            transform: translateY(4px) scale(0.96);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-card i {
+            font-size: 24px;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .action-card span {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        /* دکمه اختصاصی متحرک سه‌بعدی و نئونی */
+        .btn-glow-wrapper {
+            position: relative;
+            margin-top: 16px;
+            width: 100%;
+        }
+
+        .btn-glow {
+            width: 100%;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed, #db2777);
+            background-size: 200% 200%;
+            animation: gradientShift 3s ease infinite;
+            border: none;
+            color: white;
+            padding: 16px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 10px 20px -5px rgba(124, 58, 237, 0.5), inset 0 2px 2px rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.1s ease;
+        }
+
+        .btn-glow:active {
+            transform: scale(0.95) translateY(2px);
+            box-shadow: 0 5px 10px -3px rgba(124, 58, 237, 0.4);
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* باکس لینک رفرال */
+        .referral-box {
+            background: var(--card-bg);
+            border: 1px dashed var(--secondary-glow);
+            border-radius: 18px;
+            padding: 14px;
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .referral-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .referral-title {
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        .referral-link {
+            font-size: 13px;
+            font-weight: bold;
+            color: #38bdf8;
+            direction: ltr;
+        }
+
+        .btn-copy {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-copy:active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* متون کپی‌رایت انتهای صفحه */
+        .footer-credits {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-sub);
+            margin-top: 24px;
+            margin-bottom: 10px;
+            direction: ltr;
+            opacity: 0.8;
+            letter-spacing: 0.5px;
+        }
+
+        /* نابر پایین به سبک اپلیکیشن‌های بومی تلگرام */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0 16px 0;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-sub);
+            font-size: 11px;
+            cursor: pointer;
+            width: 20%;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+
+        .nav-item i {
+            font-size: 20px;
+        }
+
+        .nav-item.active {
+            color: #38bdf8;
+            transform: translateY(-2px);
+        }
+
+        .nav-item.active i {
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+        }
+
+        /* تب‌ها */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- ===== تب خانه ===== -->
+        <div id="tab-home" class="tab-content active">
+            <!-- کارت پروفایل -->
+            <div class="profile-card" id="profile-card">
+                <div class="avatar-wrapper">
+                    <div class="avatar" id="user-avatar">U</div>
+                    <div class="badge-vip">کاربر معمولی</div>
+                </div>
+                <div class="user-details">
+                    <div class="user-name">
+                        <span id="user-name">Mehman Silverpremium</span>
+                        <i class="fa-solid fa-circle-check" style="color: #38bdf8; font-size: 14px;"></i>
+                    </div>
+                    <div class="user-id" id="user-id">آیدی: @مهمان</div>
+                </div>
+            </div>
+
+            <!-- باکس امتیازات -->
+            <div class="score-box">
+                <div class="score-title">
+                    <i class="fa-solid fa-coins" style="color: var(--accent-gold);"></i>
+                    موجودی کل امتیاز:
+                </div>
+                <div class="score-value" id="user-score">زیرمجموعه گیری غیرفعال است</div>
+            </div>
+
+            <!-- دکمه متحرک سه‌بعدی بنر اصلی -->
+            <div class="btn-glow-wrapper">
+                <button class="btn-glow" onclick="triggerHaptic(); tg.showAlert('🎁 هدیه روزانه شما فعال شد! ۱۰۰ امتیاز دریافت کردید.');">
+                    <i class="fa-solid fa-gift fa-bounce"></i>
+                    <span>تلگرام پرمیوم رایگان‌</span>
+                </button>
+            </div>
+
+            <!-- گرید دکمه‌های عملیاتی -->
+            <div class="section-title">بخش دسترسی سریع و خرید اشتراک</div>
+            <div class="grid-buttons">
+                <div class="action-card" onclick="triggerHaptic(); tg.showAlert('⚡ بخش ماموریت‌ها به‌زودی باز می‌شود.');">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>ماموریت‌ها</span>
+                </div>
+                <div class="action-card" onclick="triggerHaptic(); tg.showAlert('🏆 شما در رتبه ۲۴ برترین‌ها قرار دارید.');">
+                    <i class="fa-solid fa-trophy" style="background: linear-gradient(135deg, #f59e0b, #ef4444); -webkit-background-clip: text;"></i>
+                    <span>برترین‌های زیرمجموعه</span>
+                </div>
+                <div class="action-card" onclick="triggerHaptic(); tg.showAlert('💎 فروشگاه تلگرام پرمیوم فعال است.');">
+                    <i class="fa-solid fa-gem" style="background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text;"></i>
+                    <span>خرید تلگرام پرمیوم</span>
+                </div>
+                <div class="action-card" onclick="triggerHaptic('https://amiralicoal34599-cpu.github.io/Amir/');">
+                    <i class="fa-solid fa-headset" style="background: linear-gradient(135deg, #10b981, #059669); -webkit-background-clip: text;"></i>
+                    <span>پشتیبانی</span>
+                </div>
+            </div>
+
+            <!-- باکس رفرال -->
+            <div class="section-title">دعوت از دوستان (کسب امتیاز)</div>
+            <div class="referral-box">
+                <div class="referral-info">
+                    <span class="referral-title">لینک اختصاصی شما:</span>
+                    <span class="referral-link" id="ref-link">تا اطلاع ثانوی غیرفعال است.برای مطلع شدن به چنل سر بزنید</span>
+                </div>
+                <button class="btn-copy" onclick="copyReferral()">کپی لینک</button>
+            </div>
+        </div>
+
+        <!-- ===== تب‌های دیگر (آماده برای توسعه) ===== -->
+        <div id="tab-tasks" class="tab-content">
+            <div class="section-title">چالش‌های فعال</div>
+            <div class="action-card" style="width: 100%; text-align: right; align-items: flex-start; margin-bottom: 10px;">
+                <i class="fa-brands fa-telegram"></i>
+                <span>عضویت در کانال اصلی</span>
+                <p style="font-size: 11px; color: var(--text-sub);">+2 امتیاز برای پرمیوم رایگان</p>
+            </div>
+        </div>
+
+        <div id="tab-wallet" class="tab-content">
+            <div class="section-title">روش پرداخت</div>
+            <div class="score-box" style="justify-content: center; gap: 10px;">
+                <i class="fa-solid fa-wallet" style="font-size: 24px; color: #38bdf8;"></i>
+                <span>برای پرداخت به درگاه پرداخت مراجعه و یا به پشتیبانی تلگرام Unknownsupported@ پیام دهید</span>
+            </div>
+        </div>
+
+        <!-- عبارت کپی‌رایت و حامیان -->
+        <div class="footer-credits">
+            Supported By @im_bronze - @Unknownsupported
+        </div>
+
+    </div>
+
+    <!-- نوار ناوبری پایینی (Bottom Navigation) -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('tab-home', this)">
+            <i class="fa-solid fa-house"></i>
+            <span>خانه</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('tab-tasks', this)">
+            <i class="fa-solid fa-list-check"></i>
+            <span>ماموریت</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('tab-wallet', this)">
+            <i class="fa-solid fa-wallet"></i>
+            <span>لیست واریزی ها</span>
+        </div>
+    </div>
+
+    <script>
+        // مقداردهی اولیه تلگرام Web App
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // تمام صفحه کردن صفحه
+        tg.enableClosingConfirmation(); // تاییدیه موقع بستن صفحه
+
+        // تنظیم رنگ نوار بالای تلگرام
+        tg.setHeaderColor('#0f172a');
+        tg.setBackgroundColor('#0f172a');
+
+        // دریافت اطلاعات کاربر واقعی از تلگرام
+        const user = tg.initDataUnsafe?.user;
+
+        if (user) {
+            // نام کاربر
+            const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+            document.getElementById('user-name').innerText = fullName || 'کاربر تلگرام';
+            
+            // آیدی کاربر
+            if (user.username) {
+                document.getElementById('user-id').innerText = `@${user.username}`;
+            } else {
+                document.getElementById('user-id').innerText = `ID: ${user.id}`;
+            }
+
+            // حرف اول اسم برای آواتار
+            const firstLetter = user.first_name ? user.first_name.charAt(0).toUpperCase() : 'U';
+            document.getElementById('user-avatar').innerText = firstLetter;
+
+            // ساخت لینک اختصاصی رفرال
+            document.getElementById('ref-link').innerText = `https://t.me/Bot?start=${user.id}`;
+        }
+
+        // ویبره و فیدبک لمسی دستگاه + امکان باز کردن لینک
+        function triggerHaptic(url) {
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('medium');
+            }
+            if (url) {
+                if (tg.openLink) {
+                    tg.openLink(url);
+                } else {
+                    window.open(url, '_blank');
+                }
+            }
+        }
+
+        // تغییر تب‌ها
+        function switchTab(tabId, element) {
+            triggerHaptic();
+            
+            // غیرفعال کردن همه تب‌ها
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // فعال کردن تب انتخابی
+            document.getElementById(tabId).classList.add('active');
+            element.classList.add('active');
+        }
+
+        // کپی هوشمند لینک رفرال
+        function copyReferral() {
+            triggerHaptic();
+            const linkText = document.getElementById('ref-link').innerText;
+            
+            navigator.clipboard.writeText(linkText).then(() => {
+                tg.showAlert("✅ لینک دعوت با موفقیت کپی شد!");
+            }).catch(() => {
+                tg.showAlert("خطا در کپی لینک.");
+            });
+        }
+    </script>
+</body>
+</html>
