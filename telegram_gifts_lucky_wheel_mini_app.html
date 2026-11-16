@@ -1,0 +1,2370 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Telegram Gifts & Lucky Wheel Mini App</title>
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Vazirmatn (Persian) + Inter (English/Russian) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            tg: {
+              bg: '#0e1621',
+              surface: '#17212b',
+              card: '#1c2733',
+              cardHover: '#23303f',
+              border: '#263442',
+              blue: '#2ea6ff',
+              blueDark: '#1c8adb',
+              text: '#f5f5f5',
+              hint: '#7f91a4',
+              gold: '#ffbe2e',
+            }
+          },
+          fontFamily: {
+            sans: ['Vazirmatn', 'Inter', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* ==========================================================================
+       CUSTOM VARIABLES & BASE TELEGRAM MINI APP STYLING
+       ========================================================================== */
+    :root {
+      --tg-bg: #0e1621;
+      --tg-surface: #17212b;
+      --tg-card: #1c2733;
+      --tg-blue: #2ea6ff;
+      --glow-opacity: 0.45;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--tg-bg);
+      color: #f5f5f5;
+      font-family: 'Vazirmatn', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* Custom Sleek Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(127, 145, 164, 0.25);
+      border-radius: 9999px;
+    }
+
+    /* Glassmorphism & Ambient Glows */
+    .tg-glass {
+      background: rgba(23, 33, 43, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .tg-card-elevated {
+      background: linear-gradient(145deg, rgba(28, 39, 51, 0.96), rgba(20, 29, 39, 0.98));
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 10px 28px -6px rgba(0, 0, 0, 0.4);
+      transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .tg-card-elevated:active {
+      transform: scale(0.97);
+    }
+
+    .ambient-orb {
+      position: fixed;
+      border-radius: 9999px;
+      filter: blur(85px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: var(--glow-opacity);
+      transition: opacity 0.4s ease;
+    }
+
+    /* Gift Floating & Shimmer Animations */
+    @keyframes floatGift {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-6px) rotate(1.5deg); }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { filter: drop-shadow(0 6px 14px rgba(46, 166, 255, 0.3)); }
+      50% { filter: drop-shadow(0 12px 24px rgba(255, 190, 46, 0.45)); }
+    }
+
+    .gift-float {
+      animation: floatGift 3.4s ease-in-out infinite;
+    }
+
+    .gift-hero-glow {
+      animation: floatGift 3s ease-in-out infinite, pulseGlow 3s ease-in-out infinite;
+    }
+
+    /* Telegram Bottom Sheet Modal Transitions */
+    .modal-backdrop {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.28s ease;
+    }
+    .modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .bottom-sheet {
+      transform: translateY(100%);
+      transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .modal-backdrop.active .bottom-sheet {
+      transform: translateY(0);
+    }
+
+    /* Toggle Switch Styling */
+    .tg-switch {
+      width: 46px;
+      height: 26px;
+      background-color: #2c3b4b;
+      border-radius: 9999px;
+      position: relative;
+      transition: background-color 0.25s ease;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .tg-switch.on {
+      background-color: #2ea6ff;
+    }
+    .tg-switch-knob {
+      width: 20px;
+      height: 20px;
+      background-color: #ffffff;
+      border-radius: 9999px;
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+    .tg-switch.on .tg-switch-knob {
+      transform: translateX(20px);
+    }
+
+    /* Tab Page Transition */
+    .tab-view {
+      display: none;
+      animation: fadeSlideUp 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .tab-view.active {
+      display: block;
+    }
+
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Lucky Wheel Pointer Bounce */
+    @keyframes pointerTick {
+      0% { transform: translateX(-50%) rotate(0deg); }
+      40% { transform: translateX(-50%) rotate(-26deg); }
+      100% { transform: translateX(-50%) rotate(0deg); }
+    }
+    .wheel-pointer-tick {
+      animation: pointerTick 0.13s ease-out;
+    }
+
+    /* Confetti Canvas */
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* Toast Notification */
+    #toast-container {
+      position: fixed;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 90;
+      pointer-events: none;
+      width: 90%;
+      max-width: 380px;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-tg-blue selection:text-white pb-24">
+
+  <!-- Ambient Neon Orbs -->
+  <div class="ambient-orb w-64 h-64 bg-tg-blue/25 -top-16 -left-16"></div>
+  <div class="ambient-orb w-72 h-72 bg-purple-600/20 top-1/3 -right-24"></div>
+  <div class="ambient-orb w-60 h-60 bg-amber-500/15 bottom-16 left-1/4"></div>
+
+  <!-- Confetti Particle Overlay -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="flex flex-col items-center gap-2"></div>
+
+  <!-- ========================================================================
+       STICKY TOP GLASS HEADER
+       ======================================================================== -->
+  <header class="sticky top-0 z-30 tg-glass border-b border-white/5 px-4 py-3">
+    <div class="max-w-lg mx-auto flex items-center justify-between gap-2">
+      <!-- App Brand & Star Badge -->
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-tg-blue to-indigo-600 flex items-center justify-center shadow-lg shadow-tg-blue/25 overflow-hidden p-1.5 shrink-0">
+          <svg viewBox="0 0 64 64" class="w-full h-full">
+            <defs>
+              <linearGradient id="hdrStarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#FFF3A8"/>
+                <stop offset="50%" stop-color="#FFD038"/>
+                <stop offset="100%" stop-color="#F59E0B"/>
+              </linearGradient>
+            </defs>
+            <path d="M32 6l7.6 15.8L57 24.3 44.3 36.5l3.1 17.5L32 45.7 16.6 54l3.1-17.5L7 24.3l17.4-2.5z" fill="url(#hdrStarGrad)" stroke="#FFF" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <h1 data-i18n="appTitle" class="text-sm sm:text-base font-extrabold tracking-tight text-white leading-tight">گیفت‌استار تلگرام</h1>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span data-i18n="appSubtitle" class="text-[11px] text-tg-hint font-medium">مینی‌اپ رسمی هدایا</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Controls: Star Balance Pill + Language Switcher (with Uploadable SVG support) -->
+      <div class="flex items-center gap-2">
+        <!-- Star Balance Button -->
+        <button onclick="topUpStars(100)" class="flex items-center gap-1.5 bg-tg-card hover:bg-tg-cardHover border border-amber-400/25 px-3 py-1.5 rounded-full transition active:scale-95 shadow-sm">
+          <span class="w-4 h-4 inline-flex items-center justify-center" id="header-star-icon"></span>
+          <span id="star-balance-display" class="text-xs sm:text-sm font-bold text-amber-300 tabular-nums">250</span>
+          <span class="w-4 h-4 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center text-xs font-extrabold leading-none">+</span>
+        </button>
+
+        <!-- Language Selector Button with Vector SVG Flag or Custom Uploaded SVG -->
+        <div class="relative">
+          <button id="lang-dropdown-btn" onclick="toggleLangMenu()" class="flex items-center gap-1.5 bg-tg-card hover:bg-tg-cardHover border border-white/10 px-2.5 py-1.5 rounded-full transition active:scale-95">
+            <span id="current-lang-icon" class="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center shadow-inner shrink-0"></span>
+            <span id="current-lang-code" class="text-xs font-bold uppercase text-white">FA</span>
+            <svg class="w-3.5 h-3.5 text-tg-hint" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+
+          <!-- Language Dropdown Menu -->
+          <div id="lang-menu" class="hidden absolute top-11 ltr:right-0 rtl:left-0 w-44 tg-glass rounded-2xl shadow-2xl border border-white/10 p-1.5 z-50">
+            <button onclick="setLanguage('fa')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-white/10 transition text-xs font-semibold text-white">
+              <span class="flex items-center gap-2.5">
+                <span class="w-5 h-5 rounded-full overflow-hidden shrink-0" id="flag-opt-fa"></span>
+                <span>فارسی (FA)</span>
+              </span>
+              <span id="check-fa" class="text-tg-blue font-bold">✓</span>
+            </button>
+            <button onclick="setLanguage('en')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-white/10 transition text-xs font-semibold text-white mt-0.5">
+              <span class="flex items-center gap-2.5">
+                <span class="w-5 h-5 rounded-full overflow-hidden shrink-0" id="flag-opt-en"></span>
+                <span>English (EN)</span>
+              </span>
+              <span id="check-en" class="text-tg-blue font-bold hidden">✓</span>
+            </button>
+            <button onclick="setLanguage('ru')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-white/10 transition text-xs font-semibold text-white mt-0.5">
+              <span class="flex items-center gap-2.5">
+                <span class="w-5 h-5 rounded-full overflow-hidden shrink-0" id="flag-opt-ru"></span>
+                <span>Русский (RU)</span>
+              </span>
+              <span id="check-ru" class="text-tg-blue font-bold hidden">✓</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       MAIN CONTENT CONTAINER
+       ======================================================================== -->
+  <main class="max-w-lg mx-auto px-4 pt-4 relative z-10">
+
+    <!-- ======================================================================
+         TAB 1: LUCKY WHEEL (گردونه شانس - ۵۰٪ تدی و قلب، بدون پوچ)
+         ====================================================================== -->
+    <section id="tab-wheel" class="tab-view active space-y-4">
+      <div class="tg-card-elevated rounded-3xl p-5 text-center relative overflow-hidden">
+        <div class="space-y-1 mb-3">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/25 text-emerald-300 text-[11px] font-bold">
+            <span class="w-3.5 h-3.5 inline-flex" id="badge-target-icon"></span>
+            <span data-i18n="wheelNoEmptyBadge">۱۰۰٪ برنده • بدون خانه پوچ</span>
+          </div>
+          <h2 data-i18n="wheelTitle" class="text-xl font-extrabold text-white">گردونه شانس گیفت‌های تلگرام</h2>
+          <p data-i18n="wheelSubtitle" class="text-xs text-tg-hint">۵۰٪ شانس برنده شدن خرس تدی یا قلب روبان‌دار در هر چرخش!</p>
+        </div>
+
+        <!-- Wheel Container -->
+        <div class="relative w-72 h-72 sm:w-80 sm:h-80 mx-auto my-2 flex items-center justify-center">
+          <!-- Outer Neon Ring -->
+          <div class="absolute inset-0 rounded-full border-4 border-tg-blue/45 shadow-[0_0_38px_rgba(46,166,255,0.3)] pointer-events-none"></div>
+
+          <!-- Top Needle Pointer -->
+          <div id="wheel-pointer" class="absolute -top-3 left-1/2 -translate-x-1/2 z-20 w-9 h-10 drop-shadow-[0_4px_10px_rgba(0,0,0,0.65)]">
+            <svg viewBox="0 0 40 46" class="w-full h-full">
+              <defs>
+                <linearGradient id="needleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#FFE066"/>
+                  <stop offset="100%" stop-color="#F59E0B"/>
+                </linearGradient>
+              </defs>
+              <path d="M20 44 L4 12 C4 5 11 2 20 2 C29 2 36 5 36 12 Z" fill="url(#needleGrad)" stroke="#FFFFFF" stroke-width="2.5" stroke-linejoin="round"/>
+              <circle cx="20" cy="13" r="4.5" fill="#17212b"/>
+            </svg>
+          </div>
+
+          <!-- Interactive Canvas Wheel -->
+          <canvas id="lucky-wheel-canvas" class="w-full h-full rounded-full"></canvas>
+
+          <!-- Center Spin Hub Button -->
+          <button id="wheel-center-btn" onclick="spinLuckyWheel()" class="absolute z-10 w-16 h-16 rounded-full bg-gradient-to-b from-tg-blue to-blue-600 border-4 border-[#17212b] shadow-xl flex flex-col items-center justify-center text-white font-extrabold text-xs active:scale-90 transition cursor-pointer">
+            <span data-i18n="spinBtnShort">بچرخان</span>
+          </button>
+        </div>
+
+        <!-- Spin Action Controls -->
+        <div class="mt-4 space-y-2.5">
+          <button id="spin-action-btn" onclick="spinLuckyWheel()" class="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-tg-blue via-sky-500 to-indigo-500 hover:brightness-110 text-white font-extrabold text-sm shadow-lg shadow-tg-blue/30 transition active:scale-[0.98] flex items-center justify-center gap-2">
+            <span class="w-4 h-4 inline-flex" id="spin-btn-icon"></span>
+            <span id="spin-btn-label" data-i18n="spinFreeLabel">چرخش رایگان روزانه (۱ باقی‌مانده)</span>
+          </button>
+          <p data-i18n="wheelHint" class="text-[11px] text-tg-hint">هر چرخش اضافی ۱۵ استارز هزینه دارد • جوایز بلافاصله به موجودی برداشت اضافه می‌شوند</p>
+        </div>
+      </div>
+
+      <!-- Transparent Drop Rates Breakdown Card -->
+      <div class="tg-card-elevated rounded-3xl p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-extrabold text-white flex items-center gap-1.5">
+            <span class="w-4 h-4 inline-flex text-tg-blue" id="rates-chart-icon"></span>
+            <span data-i18n="dropRatesTitle">جدول شانس واقعی گردونه</span>
+          </h3>
+          <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-pink-300 bg-pink-500/15 px-2.5 py-0.5 rounded-full">
+            <span class="w-3.5 h-3.5 inline-flex" id="badge-teddy-mini"></span>
+            <span>+</span>
+            <span class="w-3.5 h-3.5 inline-flex" id="badge-heart-mini"></span>
+            <span>= 50%</span>
+          </span>
+        </div>
+        <div id="drop-rates-grid" class="grid grid-cols-2 gap-2 text-xs">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- Recent Wheel Wins Ticker -->
+      <div class="tg-card-elevated rounded-3xl p-4 space-y-2.5">
+        <h3 data-i18n="recentWinsTitle" class="text-xs font-bold text-tg-hint uppercase tracking-wider">آخرین جوایز برنده شده</h3>
+        <div id="wheel-history-list" class="space-y-2 text-xs">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         TAB 2: TELEGRAM GIFTS STORE & SAVED COLLECTION
+         ====================================================================== -->
+    <section id="tab-store" class="tab-view space-y-4">
+      <!-- Promo Banner Card -->
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1b2d42] via-[#182536] to-[#111924] border border-tg-blue/25 p-5 shadow-xl">
+        <div class="relative z-10 flex items-center justify-between gap-3">
+          <div class="space-y-1.5 max-w-[65%]">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-tg-blue/20 text-tg-blue text-[11px] font-bold tracking-wide">
+              <span class="w-3 h-3 inline-flex" id="hero-sparkle-icon"></span>
+              <span data-i18n="heroBadge">کلکسیون ویژه تلگرام</span>
+            </span>
+            <h2 data-i18n="heroTitle" class="text-lg sm:text-xl font-extrabold text-white leading-snug">
+              ارسال و دریافت گیفت‌های درخشان
+            </h2>
+            <p data-i18n="heroDesc" class="text-xs text-tg-hint leading-relaxed">
+              روی هر گیفت کلیک کنید تا نمای تلگرامی آن باز شود، در پروفایل نمایش دهید یا به استارز تبدیل کنید.
+            </p>
+          </div>
+          <!-- Animated Featured Gift Preview -->
+          <div class="w-24 h-24 sm:w-28 sm:h-28 shrink-0 gift-hero-glow flex items-center justify-center" id="hero-featured-svg"></div>
+        </div>
+      </div>
+
+      <!-- Store Sub-Filter Pills (Catalog vs My Saved Gifts) -->
+      <div class="flex items-center justify-between gap-2 bg-tg-surface p-1.5 rounded-2xl border border-white/5">
+        <button id="subtab-catalog-btn" onclick="setStoreSubtab('catalog')" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition bg-tg-blue text-white shadow">
+          <span data-i18n="storeCatalogTab">فروشگاه گیفت‌ها</span>
+        </button>
+        <button id="subtab-inventory-btn" onclick="setStoreSubtab('inventory')" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition text-tg-hint hover:text-white flex items-center justify-center gap-1.5">
+          <span data-i18n="storeInventoryTab">گیفت‌های من</span>
+          <span id="inventory-count-badge" class="px-1.5 py-0.5 text-[10px] rounded-full bg-white/10 text-white">2</span>
+        </button>
+      </div>
+
+      <!-- Store Catalog Grid -->
+      <div id="store-catalog-view" class="grid grid-cols-2 gap-3.5">
+        <!-- Populated dynamically via JS -->
+      </div>
+
+      <!-- User's Saved Gifts Inventory Grid -->
+      <div id="store-inventory-view" class="hidden space-y-3">
+        <div id="inventory-grid" class="grid grid-cols-2 gap-3.5">
+          <!-- Populated dynamically via JS -->
+        </div>
+        <div id="empty-inventory-msg" class="hidden text-center py-12 tg-card-elevated rounded-3xl p-6">
+          <p data-i18n="emptyInventory" class="text-sm text-tg-hint font-medium">هنوز گیفتی در کلکسیون خود ندارید!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         TAB 3: WITHDRAW GIFTS & TELEGRAM SUPPORT (@Unknownsupported)
+         ====================================================================== -->
+    <section id="tab-withdraw" class="tab-view space-y-4">
+      <!-- Withdraw Header Banner -->
+      <div class="tg-card-elevated rounded-3xl p-5 relative overflow-hidden">
+        <div class="flex items-start justify-between gap-3">
+          <div class="space-y-1.5">
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tg-blue/15 border border-tg-blue/25 text-tg-blue text-[11px] font-bold">
+              <span class="w-3.5 h-3.5 inline-flex" id="withdraw-badge-icon"></span>
+              <span data-i18n="withdrawBadge">برداشت مستقیم گیفت تلگرام</span>
+            </div>
+            <h2 data-i18n="withdrawTitle" class="text-xl font-extrabold text-white">برداشت گیفت‌های برنده شده</h2>
+            <p data-i18n="withdrawSubtitle" class="text-xs text-tg-hint leading-relaxed">
+              گیفت‌های موجود در حساب شما آماده انتقال به اکانت تلگرام هستند.
+            </p>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-tg-blue/20 to-indigo-500/20 border border-tg-blue/30 flex items-center justify-center shrink-0 text-tg-blue p-2.5" id="withdraw-hero-icon"></div>
+        </div>
+
+        <!-- Summary Counters -->
+        <div class="grid grid-cols-2 gap-2.5 mt-4 pt-4 border-t border-white/5">
+          <div class="bg-tg-bg/65 rounded-2xl p-3 flex items-center justify-between">
+            <div>
+              <div data-i18n="withdrawReadyGiftsLabel" class="text-[11px] text-tg-hint">گیفت‌های آماده برداشت</div>
+              <div id="withdraw-gifts-count" class="text-base font-extrabold text-white mt-0.5 tabular-nums">2</div>
+            </div>
+            <span class="w-7 h-7 inline-flex text-tg-blue" id="withdraw-stat-gift-icon"></span>
+          </div>
+          <div class="bg-tg-bg/65 rounded-2xl p-3 flex items-center justify-between">
+            <div>
+              <div data-i18n="withdrawStarsBalanceLabel" class="text-[11px] text-tg-hint">موجودی استارز</div>
+              <div id="withdraw-stars-count" class="text-base font-extrabold text-amber-300 mt-0.5 tabular-nums">250</div>
+            </div>
+            <span class="w-7 h-7 inline-flex" id="withdraw-stat-star-icon"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Official Support Instruction Card (@Unknownsupported) -->
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#192c42] via-[#172332] to-[#121b26] border border-tg-blue/35 p-5 shadow-xl space-y-4">
+        <div class="flex items-start gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-tg-blue/20 border border-tg-blue/35 flex items-center justify-center text-tg-blue shrink-0 p-2.5" id="support-headset-icon"></div>
+          <div class="space-y-1">
+            <h3 data-i18n="supportCardTitle" class="text-sm sm:text-base font-extrabold text-white">راهنمای دریافت و برداشت گیفت</h3>
+            <p data-i18n="supportInstructionText" class="text-xs text-slate-200 leading-relaxed">
+              برای برداشت گیفت‌های خود، لطفاً به پشتیبانی رسمی ما به آیدی <span class="text-tg-blue font-extrabold" dir="ltr">@Unknownsupported</span> در تلگرام پیام دهید تا گیفت‌ها بلافاصله برای شما ارسال شوند.
+            </p>
+          </div>
+        </div>
+
+        <!-- Support Username Box & Action Buttons -->
+        <div class="bg-[#0e1621]/80 border border-white/10 rounded-2xl p-3 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="w-8 h-8 rounded-xl bg-tg-blue/15 text-tg-blue flex items-center justify-center p-1.5 shrink-0" id="support-tg-plane-icon"></span>
+            <div class="truncate">
+              <div data-i18n="supportIdLabel" class="text-[10px] text-tg-hint font-medium">آیدی پشتیبانی تلگرام</div>
+              <div class="text-sm font-extrabold text-white tracking-wide truncate" dir="ltr">@Unknownsupported</div>
+            </div>
+          </div>
+
+          <button onclick="copySupportUsername()" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shrink-0">
+            <span class="w-3.5 h-3.5 inline-flex" id="copy-support-icon"></span>
+            <span data-i18n="copyIdBtn">کپی آیدی</span>
+          </button>
+        </div>
+
+        <!-- Direct Message Support CTA Button -->
+        <a href="https://t.me/Unknownsupported" target="_blank" rel="noopener noreferrer" onclick="playClickSound(); triggerHaptic('medium');" class="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-tg-blue to-blue-600 hover:brightness-110 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-tg-blue/30 transition active:scale-[0.98] flex items-center justify-center gap-2">
+          <span class="w-4 h-4 inline-flex" id="cta-plane-icon"></span>
+          <span data-i18n="messageSupportBtn">ارسال پیام به پشتیبانی (@Unknownsupported)</span>
+        </a>
+      </div>
+
+      <!-- Available Gifts to Withdraw Grid -->
+      <div class="space-y-2.5">
+        <div class="flex items-center justify-between px-1">
+          <h3 data-i18n="withdrawGiftsListTitle" class="text-xs font-bold text-tg-hint uppercase tracking-wider">گیفت‌های قابل برداشت شما</h3>
+          <button onclick="switchTab('wheel')" data-i18n="winMoreGiftsBtn" class="text-xs font-bold text-tg-blue hover:underline">دریافت گیفت بیشتر</button>
+        </div>
+        <div id="withdraw-gifts-grid" class="grid grid-cols-2 gap-3">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         TAB 4: SETTINGS (تنظیمات کامل و آپلود SVG برای دکمه زبان)
+         ====================================================================== -->
+    <section id="tab-settings" class="tab-view space-y-4">
+      <div class="px-1">
+        <h2 data-i18n="settingsTitle" class="text-lg font-extrabold text-white">تنظیمات مینی‌اپ</h2>
+        <p data-i18n="settingsSubtitle" class="text-xs text-tg-hint">شخصی‌سازی زبان، صدا، افکت‌های بصری و آپلود ایموجی SVG</p>
+      </div>
+
+      <!-- Language Card -->
+      <div class="bg-tg-surface rounded-3xl border border-white/5 p-4 space-y-3">
+        <div class="flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-xl bg-tg-blue/15 text-tg-blue flex items-center justify-center p-1.5" id="set-globe-icon"></span>
+          <div>
+            <h3 data-i18n="setLangTitle" class="text-sm font-bold text-white">زبان برنامه (Language)</h3>
+            <p data-i18n="setLangDesc" class="text-[11px] text-tg-hint">ترجمه زنده کل محیط مینی‌اپ و تغییر جهت صفحه</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2 pt-1">
+          <button onclick="setLanguage('fa')" id="set-lang-btn-fa" class="py-2.5 px-2 rounded-2xl border border-tg-blue bg-tg-blue/15 text-xs font-bold text-white flex flex-col items-center gap-1.5 transition">
+            <span class="w-6 h-6 rounded-full overflow-hidden" id="set-flag-fa"></span>
+            <span>فارسی</span>
+          </button>
+          <button onclick="setLanguage('en')" id="set-lang-btn-en" class="py-2.5 px-2 rounded-2xl border border-white/10 bg-tg-card text-xs font-bold text-tg-hint flex flex-col items-center gap-1.5 transition">
+            <span class="w-6 h-6 rounded-full overflow-hidden" id="set-flag-en"></span>
+            <span>English</span>
+          </button>
+          <button onclick="setLanguage('ru')" id="set-lang-btn-ru" class="py-2.5 px-2 rounded-2xl border border-white/10 bg-tg-card text-xs font-bold text-tg-hint flex flex-col items-center gap-1.5 transition">
+            <span class="w-6 h-6 rounded-full overflow-hidden" id="set-flag-ru"></span>
+            <span>Русский</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Custom SVG Emoji Uploader for Language Button -->
+      <div class="bg-tg-surface rounded-3xl border border-white/5 p-4 space-y-3">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl bg-pink-500/15 text-pink-400 flex items-center justify-center p-2" id="set-palette-icon"></span>
+            <div>
+              <h3 data-i18n="setSvgUploadTitle" class="text-sm font-bold text-white">آپلود ایموجی SVG دکمه زبان</h3>
+              <p data-i18n="setSvgUploadDesc" class="text-[11px] text-tg-hint">فایل .svg دلخواه خود را آپلود کنید تا روی دکمه زبان هدر قرار گیرد</p>
+            </div>
+          </div>
+          <!-- Live Preview of Current Language Button SVG -->
+          <div id="settings-svg-preview" class="w-10 h-10 rounded-full bg-tg-card border border-white/10 p-1.5 flex items-center justify-center shrink-0"></div>
+        </div>
+
+        <div class="flex items-center gap-2.5 pt-1">
+          <label onclick="playClickSound()" class="flex-1 cursor-pointer bg-tg-card hover:bg-tg-cardHover border border-dashed border-tg-blue/50 rounded-2xl py-3 px-4 text-center transition">
+            <span data-i18n="chooseSvgBtn" class="text-xs font-bold text-tg-blue">+ آپلود فایل SVG از دستگاه</span>
+            <input type="file" id="svg-file-input" accept=".svg,image/svg+xml" class="hidden" onchange="handleSvgUpload(event)" />
+          </label>
+          <button onclick="resetCustomSvg()" data-i18n="resetSvgBtn" class="py-3 px-3.5 rounded-2xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-tg-hint transition">
+            بازنشانی
+          </button>
+        </div>
+      </div>
+
+      <!-- Interactive Toggles Card -->
+      <div class="bg-tg-surface rounded-3xl border border-white/5 divide-y divide-white/5 overflow-hidden">
+        <!-- Sound Effects Toggle -->
+        <div class="p-4 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center p-2" id="set-sound-icon"></span>
+            <div>
+              <div data-i18n="setSoundTitle" class="text-sm font-bold text-white">افکت‌های صوتی</div>
+              <div data-i18n="setSoundDesc" class="text-[11px] text-tg-hint">صدای چرخش گردونه، کلیک دکمه‌ها و دریافت گیفت</div>
+            </div>
+          </div>
+          <div id="toggle-sound" onclick="toggleSetting('sound')" class="tg-switch on">
+            <div class="tg-switch-knob"></div>
+          </div>
+        </div>
+
+        <!-- Haptic Vibration Toggle -->
+        <div class="p-4 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center p-2" id="set-haptic-icon"></span>
+            <div>
+              <div data-i18n="setHapticTitle" class="text-sm font-bold text-white">بازخورد لرزشی (Haptic)</div>
+              <div data-i18n="setHapticDesc" class="text-[11px] text-tg-hint">لرزش ظریف تلگرام هنگام تعامل</div>
+            </div>
+          </div>
+          <div id="toggle-haptic" onclick="toggleSetting('haptic')" class="tg-switch on">
+            <div class="tg-switch-knob"></div>
+          </div>
+        </div>
+
+        <!-- Ambient Neon Glow Toggle -->
+        <div class="p-4 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center p-2" id="set-glow-icon"></span>
+            <div>
+              <div data-i18n="setGlowTitle" class="text-sm font-bold text-white">نورپردازی نئونی پس‌زمینه</div>
+              <div data-i18n="setGlowDesc" class="text-[11px] text-tg-hint">افکت درخشش مدرن در صفحات</div>
+            </div>
+          </div>
+          <div id="toggle-glow" onclick="toggleSetting('glow')" class="tg-switch on">
+            <div class="tg-switch-knob"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Demo Balance Top-up Card -->
+      <div class="bg-tg-surface rounded-3xl border border-white/5 p-4 flex items-center justify-between gap-3">
+        <div>
+          <h3 data-i18n="demoTopupTitle" class="text-sm font-bold text-white">شارژ آزمایشی استارز</h3>
+          <p data-i18n="demoTopupDesc" class="text-[11px] text-tg-hint">افزودن ۵۰۰ استارز رایگان برای تست گردونه و خرید گیفت</p>
+        </div>
+        <button onclick="topUpStars(500)" class="py-2.5 px-4 rounded-2xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 font-extrabold text-xs transition active:scale-95 shrink-0 inline-flex items-center gap-1.5">
+          <span>+500</span>
+          <span class="w-3.5 h-3.5 inline-flex" id="topup-btn-star-icon"></span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================
+       BOTTOM GLASS NAVIGATION BAR (VECTOR SVG ICONS ONLY - ZERO EMOJIS)
+       ======================================================================== -->
+  <nav class="fixed bottom-0 inset-x-0 z-30 tg-glass border-t border-white/5 px-2 py-2">
+    <div class="max-w-lg mx-auto grid grid-cols-4 gap-1">
+      <button onclick="switchTab('wheel')" id="nav-wheel" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-2xl text-tg-blue bg-tg-blue/10 transition">
+        <span class="w-5 h-5 inline-flex" id="nav-icon-wheel"></span>
+        <span data-i18n="navWheel" class="text-[11px] font-bold mt-1">گردونه</span>
+      </button>
+      <button onclick="switchTab('store')" id="nav-store" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-2xl text-tg-hint hover:text-white transition">
+        <span class="w-5 h-5 inline-flex" id="nav-icon-store"></span>
+        <span data-i18n="navGifts" class="text-[11px] font-bold mt-1">گیفت‌ها</span>
+      </button>
+      <button onclick="switchTab('withdraw')" id="nav-withdraw" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-2xl text-tg-hint hover:text-white transition">
+        <span class="w-5 h-5 inline-flex" id="nav-icon-withdraw"></span>
+        <span data-i18n="navWithdraw" class="text-[11px] font-bold mt-1">برداشت</span>
+      </button>
+      <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-2xl text-tg-hint hover:text-white transition">
+        <span class="w-5 h-5 inline-flex" id="nav-icon-settings"></span>
+        <span data-i18n="navSettings" class="text-[11px] font-bold mt-1">تنظیمات</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ========================================================================
+       AUTHENTIC TELEGRAM GIFT BOTTOM-SHEET MODAL
+       ======================================================================== -->
+  <div id="gift-modal-backdrop" class="modal-backdrop fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end justify-center" onclick="closeGiftModalOnBackdrop(event)">
+    <div class="bottom-sheet w-full max-w-lg bg-[#17212b] rounded-t-[28px] border-t border-white/10 p-5 pb-7 shadow-2xl relative">
+      <!-- Top Drag Handle -->
+      <div class="w-10 h-1 bg-white/15 rounded-full mx-auto mb-3"></div>
+
+      <!-- Top Right Context Menu Dots -->
+      <button onclick="closeGiftModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center text-tg-hint transition">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
+        </svg>
+      </button>
+
+      <!-- Large Glossy 3D-Style Telegram SVG Gift -->
+      <div id="modal-gift-svg" class="w-32 h-32 mx-auto my-2 gift-hero-glow flex items-center justify-center"></div>
+
+      <!-- Modal Title & Subtitle -->
+      <div class="text-center space-y-1.5 mt-2">
+        <h3 id="modal-gift-title" class="text-xl font-extrabold text-white">Saved Gift</h3>
+        <p id="modal-gift-subtitle" class="text-xs text-tg-hint max-w-xs mx-auto leading-relaxed">
+          Add this gift to your profile or convert it to Stars.
+        </p>
+      </div>
+
+      <!-- Native Telegram Structured Metadata Table -->
+      <div class="mt-4 bg-[#1c2733] rounded-2xl border border-white/5 divide-y divide-white/5 overflow-hidden text-xs">
+        <div id="modal-row-from" class="flex items-center justify-between px-4 py-2.5">
+          <span data-i18n="modalFrom" class="text-tg-hint font-medium">From</span>
+          <span class="flex items-center gap-2 font-bold text-tg-blue">
+            <span class="w-5 h-5 rounded-full bg-gradient-to-tr from-amber-500 to-pink-500 text-white text-[10px] flex items-center justify-center font-black">A</span>
+            <span id="modal-sender-name">ALi</span>
+            <span data-i18n="modalSendGiftBadge" class="px-2 py-0.5 rounded-full bg-tg-blue/15 text-tg-blue text-[10px]">send a gift</span>
+          </span>
+        </div>
+        <div class="flex items-center justify-between px-4 py-2.5">
+          <span data-i18n="modalDate" class="text-tg-hint font-medium">Date</span>
+          <span id="modal-gift-date" class="text-white font-semibold" dir="ltr">02 Aug 2025 at 09:03</span>
+        </div>
+        <div class="flex items-center justify-between px-4 py-2.5">
+          <span data-i18n="modalValue" class="text-tg-hint font-medium">Value</span>
+          <span class="flex items-center gap-1.5 font-extrabold text-white">
+            <span class="w-4 h-4 inline-flex" id="modal-star-icon"></span>
+            <span id="modal-gift-value">25</span>
+          </span>
+        </div>
+        <div id="modal-row-message" class="px-4 py-2.5 text-center text-white font-medium bg-white/[0.02]">
+          تولدت مبارک
+        </div>
+      </div>
+
+      <!-- Visibility Toggle Link -->
+      <div id="modal-visibility-bar" class="mt-3.5 text-center text-xs flex items-center justify-center gap-1.5">
+        <span id="modal-vis-status" class="text-tg-hint">This gift is visible.</span>
+        <button id="modal-vis-toggle-btn" onclick="toggleCurrentGiftVisibility()" class="text-tg-blue font-bold hover:underline">
+          Hide from profile &gt;
+        </button>
+      </div>
+
+      <!-- Action Buttons (Convert to Stars / Buy + Withdraw Shortcut + Primary Blue OK Button) -->
+      <div class="mt-4 space-y-2">
+        <button id="modal-secondary-btn" onclick="handleModalSecondaryAction()" class="w-full py-3 rounded-2xl bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/25 text-amber-300 font-bold text-xs transition active:scale-[0.98] flex items-center justify-center gap-1.5">
+          <span id="modal-secondary-btn-text">Convert to 21 Stars</span>
+          <span class="w-3.5 h-3.5 inline-flex" id="modal-sec-star-icon"></span>
+        </button>
+        <button onclick="closeGiftModal()" data-i18n="modalOkBtn" class="w-full py-3.5 rounded-2xl bg-tg-blue hover:bg-tg-blueDark text-white font-extrabold text-sm shadow-lg shadow-tg-blue/30 transition active:scale-[0.98]">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       APPLICATION JAVASCRIPT: SVGs, I18N, WEIGHTED WHEEL, AUDIO, STATE
+       ======================================================================== -->
+  <script>
+    /* ========================================================================
+       1. HIGH-CRAFT 3D-STYLE TELEGRAM & UI INLINE SVGs (ZERO EMOJIS)
+       ======================================================================== */
+    const SVG_ASSETS = {
+      // Telegram Gold Star SVG
+      star: `
+        <svg viewBox="0 0 64 64" class="w-full h-full">
+          <defs>
+            <linearGradient id="tgStarG" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#FFF59D"/>
+              <stop offset="45%" stop-color="#FFCA28"/>
+              <stop offset="100%" stop-color="#F57F17"/>
+            </linearGradient>
+          </defs>
+          <path d="M32 5l7.9 16.3L58 23.9 44.8 36.6l3.2 18L32 46.1 16 54.6l3.2-18L6 23.9l18.1-2.6z" fill="url(#tgStarG)" stroke="#FFE082" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="M32 10l5.6 11.6 12.8 1.9-9.3 9 2.2 12.7L32 39.2V10z" fill="#FFFFFF" fill-opacity="0.22"/>
+        </svg>`,
+
+      // Crown SVG for 500 Stars Jackpot
+      crown: `
+        <svg viewBox="0 0 64 64" class="w-full h-full">
+          <defs>
+            <linearGradient id="crownG" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#FFF59D"/>
+              <stop offset="50%" stop-color="#FFB300"/>
+              <stop offset="100%" stop-color="#E65100"/>
+            </linearGradient>
+          </defs>
+          <path d="M8 46 L14 20 L26 32 L32 14 L38 32 L50 20 L56 46 Z" fill="url(#crownG)" stroke="#FFF8E1" stroke-width="2" stroke-linejoin="round"/>
+          <rect x="10" y="48" width="44" height="6" rx="3" fill="#FFCA28"/>
+        </svg>`,
+
+      // UI Vector Icons (Zero Keyboard Emojis)
+      uiWheel: `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-full h-full">
+          <circle cx="12" cy="12" r="9"/>
+          <circle cx="12" cy="12" r="2.5"/>
+          <path d="M12 3v6.5M12 14.5V21M3 12h6.5M14.5 12H21M5.6 5.6l4.6 4.6M13.8 13.8l4.6 4.6M18.4 5.6l-4.6 4.6M10.2 13.8l-4.6 4.6"/>
+        </svg>`,
+
+      uiGift: `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-full h-full">
+          <rect x="3" y="8" width="18" height="4" rx="1"/>
+          <path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/>
+          <path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>
+        </svg>`,
+
+      uiWithdraw: `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-full h-full">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+        </svg>`,
+
+      uiSettings: `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-full h-full">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>`,
+
+      uiTarget: `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="w-full h-full">
+          <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+        </svg>`,
+
+      uiChart: `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="w-full h-full">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 19h16M7 15v-4M12 15V7M17 15v-6"/>
+        </svg>`,
+
+      uiSparkle: `
+        <svg viewBox="0 0 24 24" fill="currentColor" class="w-full h-full">
+          <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z"/>
+        </svg>`,
+
+      uiSupport: `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-full h-full">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+          <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+        </svg>`,
+
+      uiCopy: `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="w-full h-full">
+          <rect x="9" y="9" width="11" height="11" rx="2"/>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>`,
+
+      uiGlobe: `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-full h-full">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M3.6 9h16.8M3.6 15h16.8M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>
+        </svg>`,
+
+      uiPalette: `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-full h-full">
+          <circle cx="12" cy="12" r="9"/>
+          <circle cx="9" cy="9.5" r="1.2" fill="currentColor"/>
+          <circle cx="14.5" cy="9" r="1.2" fill="currentColor"/>
+          <circle cx="8.5" cy="14" r="1.2" fill="currentColor"/>
+          <circle cx="15" cy="14.5" r="1.5" fill="currentColor"/>
+        </svg>`,
+
+      uiSound: `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-full h-full">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path stroke-linecap="round" d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/>
+        </svg>`,
+
+      uiHaptic: `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-full h-full">
+          <rect x="7" y="4" width="10" height="16" rx="2"/>
+          <path stroke-linecap="round" d="M3 8v8M21 8v8"/>
+        </svg>`,
+
+      // 1. Teddy Bear Telegram Gift (خرس تدی تلگرامی)
+      teddy: `
+        <svg viewBox="0 0 120 120" class="w-full h-full">
+          <defs>
+            <radialGradient id="bearFur" cx="40%" cy="35%" r="65%">
+              <stop offset="0%" stop-color="#E6A15C"/>
+              <stop offset="55%" stop-color="#B86B28"/>
+              <stop offset="100%" stop-color="#7C3F11"/>
+            </radialGradient>
+            <radialGradient id="bearMuzzle" cx="50%" cy="40%" r="55%">
+              <stop offset="0%" stop-color="#FFE4C4"/>
+              <stop offset="100%" stop-color="#DEB07E"/>
+            </radialGradient>
+            <linearGradient id="bearHeart" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#FF5E8E"/>
+              <stop offset="100%" stop-color="#D81B60"/>
+            </linearGradient>
+          </defs>
+          <circle cx="34" cy="28" r="14" fill="url(#bearFur)"/>
+          <circle cx="34" cy="28" r="7.5" fill="url(#bearMuzzle)"/>
+          <circle cx="86" cy="28" r="14" fill="url(#bearFur)"/>
+          <circle cx="86" cy="28" r="7.5" fill="url(#bearMuzzle)"/>
+          <ellipse cx="42" cy="98" rx="14" ry="11" fill="url(#bearFur)"/>
+          <ellipse cx="42" cy="99" rx="8" ry="6" fill="url(#bearMuzzle)"/>
+          <ellipse cx="78" cy="98" rx="14" ry="11" fill="url(#bearFur)"/>
+          <ellipse cx="78" cy="99" rx="8" ry="6" fill="url(#bearMuzzle)"/>
+          <ellipse cx="60" cy="78" rx="26" ry="24" fill="url(#bearFur)"/>
+          <ellipse cx="60" cy="44" rx="27" ry="23" fill="url(#bearFur)"/>
+          <ellipse cx="60" cy="50" rx="12" ry="9.5" fill="url(#bearMuzzle)"/>
+          <ellipse cx="60" cy="46.5" rx="4.5" ry="3.2" fill="#3E1F08"/>
+          <path d="M55 53 Q60 57 65 53" stroke="#3E1F08" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+          <circle cx="49" cy="39" r="3.4" fill="#1E1005"/>
+          <circle cx="48" cy="38" r="1.1" fill="#FFF"/>
+          <circle cx="71" cy="39" r="3.4" fill="#1E1005"/>
+          <circle cx="70" cy="38" r="1.1" fill="#FFF"/>
+          <ellipse cx="33" cy="72" rx="10" ry="14" transform="rotate(-22 33 72)" fill="url(#bearFur)"/>
+          <ellipse cx="87" cy="72" rx="10" ry="14" transform="rotate(22 87 72)" fill="url(#bearFur)"/>
+          <path d="M60 92 C60 92 40 79 40 66 C40 59 46 55 52 55 C56 55 59 57.5 60 60 C61 57.5 64 55 68 55 C74 55 80 59 80 66 C80 79 60 92 60 92 Z" fill="url(#bearHeart)" stroke="#FF9EBC" stroke-width="1.2"/>
+          <path d="M46 63 C46 60 49 58 52 58" stroke="#FFF" stroke-width="2" stroke-linecap="round" opacity="0.65"/>
+        </svg>`,
+
+      // 2. Pink Heart with Gold Ribbon (قلب با روبان طلایی)
+      heart: `
+        <svg viewBox="0 0 120 120" class="w-full h-full">
+          <defs>
+            <radialGradient id="pinkHeartGrad" cx="38%" cy="30%" r="70%">
+              <stop offset="0%" stop-color="#FF94D2"/>
+              <stop offset="45%" stop-color="#FF2E93"/>
+              <stop offset="100%" stop-color="#AD0B5D"/>
+            </radialGradient>
+            <linearGradient id="goldRibbonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#FFF59D"/>
+              <stop offset="40%" stop-color="#FFD54F"/>
+              <stop offset="80%" stop-color="#FFA000"/>
+              <stop offset="100%" stop-color="#FF6F00"/>
+            </linearGradient>
+            <linearGradient id="goldRibbonBack" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#B26A00"/>
+              <stop offset="100%" stop-color="#E69500"/>
+            </linearGradient>
+          </defs>
+          <path d="M16 56 C10 48 24 42 36 46 L84 46 C96 42 110 48 104 56 Z" fill="url(#goldRibbonBack)"/>
+          <path d="M60 104 C60 104 16 76 16 44 C16 27 29 16 44 16 C52 16 57.5 20 60 25 C62.5 20 68 16 76 16 C91 16 104 27 104 44 C104 76 60 104 60 104 Z" fill="url(#pinkHeartGrad)" stroke="#FF80C0" stroke-width="1.5"/>
+          <ellipse cx="38" cy="31" rx="10" ry="6" transform="rotate(-25 38 31)" fill="#FFFFFF" opacity="0.55"/>
+          <ellipse cx="80" cy="30" rx="8" ry="4.5" transform="rotate(20 80 30)" fill="#FFFFFF" opacity="0.4"/>
+          <path d="M15 53 C28 73 72 78 105 56 L101 69 C70 89 27 83 18 65 Z" fill="url(#goldRibbonGrad)" stroke="#FFF176" stroke-width="1"/>
+          <path d="M17 61 C42 74 79 69 103 55 L100 66 C76 80 41 84 20 71 Z" fill="url(#goldRibbonGrad)" opacity="0.92"/>
+        </svg>`,
+
+      // 3. Red Rose Telegram Gift (گل رز قرمز)
+      rose: `
+        <svg viewBox="0 0 120 120" class="w-full h-full">
+          <defs>
+            <linearGradient id="rosePetalBright" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#FF5252"/>
+              <stop offset="50%" stop-color="#E51C23"/>
+              <stop offset="100%" stop-color="#8E0000"/>
+            </linearGradient>
+            <linearGradient id="rosePetalDark" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#7F0000"/>
+              <stop offset="100%" stop-color="#D32F2F"/>
+            </linearGradient>
+            <linearGradient id="roseStemGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#388E3C"/>
+              <stop offset="50%" stop-color="#76FF03"/>
+              <stop offset="100%" stop-color="#2E7D32"/>
+            </linearGradient>
+          </defs>
+          <rect x="56" y="74" width="8" height="32" rx="4" fill="url(#roseStemGrad)"/>
+          <path d="M56 85 L49 82 L56 89 Z" fill="#64DD17"/>
+          <path d="M64 93 L71 90 L64 97 Z" fill="#64DD17"/>
+          <path d="M58 78 C40 78 28 66 32 52 C42 62 50 68 58 74 Z" fill="url(#roseStemGrad)"/>
+          <path d="M62 78 C78 72 92 70 98 76 C84 78 72 82 62 82 Z" fill="url(#roseStemGrad)"/>
+          <path d="M56 76 C44 72 32 68 24 72 C34 76 46 80 56 80 Z" fill="#2E7D32"/>
+          <path d="M36 42 C32 24 54 18 62 28 C72 18 90 26 84 44 Z" fill="url(#rosePetalDark)"/>
+          <path d="M32 36 C28 58 42 76 60 76 C78 76 92 56 86 34 C76 38 68 44 60 44 C50 44 42 36 32 36 Z" fill="url(#rosePetalBright)"/>
+          <path d="M36 34 C46 42 54 54 58 72 C42 70 33 54 36 34 Z" fill="#FF3D3D"/>
+          <path d="M84 34 C72 40 66 54 64 72 C78 68 86 52 84 34 Z" fill="#FF6E6E" opacity="0.85"/>
+          <path d="M38 33 C47 38 56 40 66 35" stroke="#FFCDD2" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/>
+        </svg>`,
+
+      // 4. Delicious Birthday Cake Gift (کیک تولد تلگرامی)
+      cake: `
+        <svg viewBox="0 0 120 120" class="w-full h-full">
+          <defs>
+            <linearGradient id="cakeBody" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#F48FB1"/>
+              <stop offset="50%" stop-color="#EC407A"/>
+              <stop offset="100%" stop-color="#AD1457"/>
+            </linearGradient>
+            <linearGradient id="icingGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#FFFFFF"/>
+              <stop offset="100%" stop-color="#FCE4EC"/>
+            </linearGradient>
+            <radialGradient id="flameGrad" cx="50%" cy="60%" r="50%">
+              <stop offset="0%" stop-color="#FFF9C4"/>
+              <stop offset="55%" stop-color="#FFB300"/>
+              <stop offset="100%" stop-color="#FF3D00"/>
+            </radialGradient>
+          </defs>
+          <ellipse cx="60" cy="98" rx="44" ry="10" fill="#B0BEC5"/>
+          <ellipse cx="60" cy="96" rx="40" ry="8" fill="#ECEFF1"/>
+          <rect x="28" y="56" width="64" height="38" rx="10" fill="url(#cakeBody)"/>
+          <rect x="28" y="73" width="64" height="5" fill="#FFF8E1" opacity="0.85"/>
+          <path d="M28 60 C28 50 92 50 92 60 L92 67 C86 73 80 64 74 69 C68 74 62 63 56 69 C50 75 42 64 36 69 C31 72 28 67 28 67 Z" fill="url(#icingGrad)"/>
+          <rect x="56" y="30" width="8" height="24" rx="3" fill="#4FC3F7" stroke="#E1F5FE" stroke-width="1"/>
+          <path d="M56 36 L64 40 M56 44 L64 48" stroke="#FFFFFF" stroke-width="2"/>
+          <path d="M60 12 C66 20 67 26 60 29 C53 26 54 20 60 12 Z" fill="url(#flameGrad)"/>
+        </svg>`,
+
+      // Language SVG Flags (Iran, USA/UK, Russia)
+      flag_fa: `
+        <svg viewBox="0 0 36 36" class="w-full h-full">
+          <rect width="36" height="12" y="0" fill="#239F40"/>
+          <rect width="36" height="12" y="12" fill="#FFFFFF"/>
+          <rect width="36" height="12" y="24" fill="#DA0000"/>
+          <circle cx="18" cy="18" r="3.5" fill="none" stroke="#DA0000" stroke-width="1.6"/>
+          <path d="M18 14.2 V21.8" stroke="#DA0000" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>`,
+
+      flag_en: `
+        <svg viewBox="0 0 36 36" class="w-full h-full">
+          <rect width="36" height="36" fill="#B22234"/>
+          <path d="M0 5h36M0 11h36M0 17h36M0 23h36M0 29h36M0 35h36" stroke="#FFFFFF" stroke-width="2.6"/>
+          <rect width="18" height="19" fill="#3C3B6E"/>
+          <circle cx="5" cy="5" r="1" fill="#FFF"/><circle cx="10" cy="5" r="1" fill="#FFF"/><circle cx="15" cy="5" r="1" fill="#FFF"/>
+          <circle cx="7.5" cy="9.5" r="1" fill="#FFF"/><circle cx="12.5" cy="9.5" r="1" fill="#FFF"/>
+          <circle cx="5" cy="14" r="1" fill="#FFF"/><circle cx="10" cy="14" r="1" fill="#FFF"/><circle cx="15" cy="14" r="1" fill="#FFF"/>
+        </svg>`,
+
+      flag_ru: `
+        <svg viewBox="0 0 36 36" class="w-full h-full">
+          <rect width="36" height="12" y="0" fill="#FFFFFF"/>
+          <rect width="36" height="12" y="12" fill="#0039A6"/>
+          <rect width="36" height="12" y="24" fill="#D52B1E"/>
+        </svg>`
+    };
+
+    /* ========================================================================
+       2. EXACT WEIGHTED WHEEL SEGMENTS (TOTAL = 100%, ZERO EMPTY/NOTHING SLOTS)
+          - Teddy Bear: 25%
+          - Ribbon Heart: 25%  (Combined Teddy + Heart = 50% exact!)
+          - Red Rose: 22%
+          - Birthday Cake: 16%
+          - 200 Stars: 9%
+          - 500 Stars: 3%
+       ======================================================================== */
+    const WHEEL_SEGMENTS = [
+      {
+        id: 'teddy',
+        type: 'gift',
+        giftKey: 'teddy',
+        weight: 25,
+        starValue: 15,
+        color: '#253547',
+        accent: '#E6A15C',
+        svgKey: 'teddy',
+        label: { fa: 'خرس تدی', en: 'Teddy Bear', ru: 'Мишка Тедди' }
+      },
+      {
+        id: 'stars200',
+        type: 'stars',
+        starAmount: 200,
+        weight: 9,
+        color: '#1b2836',
+        accent: '#FBBF24',
+        svgKey: 'star',
+        label: { fa: '200 استارز', en: '200 Stars', ru: '200 Звёзд' }
+      },
+      {
+        id: 'heart',
+        type: 'gift',
+        giftKey: 'heart',
+        weight: 25,
+        starValue: 15,
+        color: '#2d2238',
+        accent: '#FF409A',
+        svgKey: 'heart',
+        label: { fa: 'قلب روبان‌دار', en: 'Ribbon Heart', ru: 'Сердце с лентой' }
+      },
+      {
+        id: 'cake',
+        type: 'gift',
+        giftKey: 'cake',
+        weight: 16,
+        starValue: 50,
+        color: '#1c2b3a',
+        accent: '#F472B6',
+        svgKey: 'cake',
+        label: { fa: 'کیک تولد', en: 'Birthday Cake', ru: 'Торт' }
+      },
+      {
+        id: 'rose',
+        type: 'gift',
+        giftKey: 'rose',
+        weight: 22,
+        starValue: 25,
+        color: '#2e1f27',
+        accent: '#F87171',
+        svgKey: 'rose',
+        label: { fa: 'گل رز', en: 'Red Rose', ru: 'Алая роза' }
+      },
+      {
+        id: 'stars500',
+        type: 'stars',
+        starAmount: 500,
+        weight: 3,
+        color: '#362916',
+        accent: '#F59E0B',
+        svgKey: 'crown',
+        label: { fa: '500 استارز', en: '500 Stars', ru: '500 Звёзд' }
+      }
+    ];
+
+    // Pre-cached Image objects for crisp vector rendering inside HTML5 Wheel Canvas
+    const wheelSvgImages = {};
+    function preloadWheelSvgImages(callback) {
+      const keys = ['teddy', 'heart', 'rose', 'cake', 'star', 'crown'];
+      let loaded = 0;
+      keys.forEach(key => {
+        const rawSvg = SVG_ASSETS[key].trim();
+        const encoded = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(rawSvg);
+        const img = new Image();
+        img.onload = () => {
+          wheelSvgImages[key] = img;
+          loaded++;
+          if (loaded === keys.length && callback) callback();
+        };
+        img.onerror = () => {
+          loaded++;
+          if (loaded === keys.length && callback) callback();
+        };
+        img.src = encoded;
+      });
+    }
+
+    /* ========================================================================
+       3. TELEGRAM GIFT CATALOG ITEMS
+       ======================================================================== */
+    const GIFT_CATALOG = [
+      {
+        key: 'teddy',
+        price: 15,
+        convertStars: 13,
+        name: { fa: 'خرس تدی تلگرامی', en: 'Plush Teddy Bear', ru: 'Плюшевый мишка' },
+        tag: { fa: 'محبوب', en: 'Popular', ru: 'Хит' }
+      },
+      {
+        key: 'heart',
+        price: 15,
+        convertStars: 13,
+        name: { fa: 'قلب با روبان طلایی', en: 'Golden Ribbon Heart', ru: 'Сердце с лентой' },
+        tag: { fa: 'ویژه', en: 'Special', ru: 'Особый' }
+      },
+      {
+        key: 'rose',
+        price: 25,
+        convertStars: 21,
+        name: { fa: 'گل رز درخشان', en: 'Scarlet Rose', ru: 'Алая роза' },
+        tag: { fa: 'کلاسیک', en: 'Classic', ru: 'Классика' }
+      },
+      {
+        key: 'cake',
+        price: 50,
+        convertStars: 43,
+        name: { fa: 'کیک جشن تولد', en: 'Celebration Cake', ru: 'Праздничный торт' },
+        tag: { fa: 'لوکس', en: 'Deluxe', ru: 'Люкс' }
+      }
+    ];
+
+    /* ========================================================================
+       4. COMPLETE TRILINGUAL DICTIONARY (FA / EN / RU - ZERO EMOJIS)
+       ======================================================================== */
+    const I18N = {
+      fa: {
+        appTitle: 'گیفت‌استار تلگرام',
+        appSubtitle: 'مینی‌اپ رسمی هدایا',
+        wheelNoEmptyBadge: '۱۰۰٪ برنده • بدون خانه پوچ',
+        wheelTitle: 'گردونه شانس گیفت‌های تلگرام',
+        wheelSubtitle: '۵۰٪ شانس برنده شدن خرس تدی یا قلب روبان‌دار در هر چرخش!',
+        spinBtnShort: 'بچرخان',
+        spinFreeLabel: 'چرخش رایگان روزانه (۱ باقی‌مانده)',
+        spinPaidLabel: 'چرخاندن گردونه (۱۵ استارز)',
+        spinningLabel: 'در حال چرخش...',
+        wheelHint: 'هر چرخش اضافی ۱۵ استارز هزینه دارد • جوایز بلافاصله به موجودی برداشت اضافه می‌شوند',
+        dropRatesTitle: 'جدول شانس واقعی گردونه',
+        recentWinsTitle: 'آخرین جوایز برنده شده',
+        heroBadge: 'کلکسیون ویژه تلگرام',
+        heroTitle: 'ارسال و دریافت گیفت‌های درخشان',
+        heroDesc: 'روی هر گیفت کلیک کنید تا نمای تلگرامی آن باز شود، در پروفایل نمایش دهید یا به استارز تبدیل کنید.',
+        storeCatalogTab: 'فروشگاه گیفت‌ها',
+        storeInventoryTab: 'گیفت‌های من',
+        emptyInventory: 'هنوز گیفتی در کلکسیون خود ندارید!',
+        withdrawBadge: 'برداشت مستقیم گیفت تلگرام',
+        withdrawTitle: 'برداشت گیفت‌های برنده شده',
+        withdrawSubtitle: 'گیفت‌های موجود در حساب شما آماده انتقال به اکانت تلگرام هستند.',
+        withdrawReadyGiftsLabel: 'گیفت‌های آماده برداشت',
+        withdrawStarsBalanceLabel: 'موجودی استارز',
+        supportCardTitle: 'راهنمای دریافت و برداشت گیفت',
+        supportInstructionText: 'برای برداشت گیفت‌های خود، لطفاً به پشتیبانی رسمی ما به آیدی @Unknownsupported در تلگرام پیام دهید تا گیفت‌ها بلافاصله برای شما ارسال شوند.',
+        supportIdLabel: 'آیدی پشتیبانی تلگرام',
+        copyIdBtn: 'کپی آیدی',
+        messageSupportBtn: 'ارسال پیام به پشتیبانی (@Unknownsupported)',
+        withdrawGiftsListTitle: 'گیفت‌های قابل برداشت شما',
+        winMoreGiftsBtn: 'دریافت گیفت بیشتر',
+        settingsTitle: 'تنظیمات مینی‌اپ',
+        settingsSubtitle: 'شخصی‌سازی زبان، صدا، افکت‌های بصری و آپلود ایموجی SVG',
+        setLangTitle: 'زبان برنامه (Language)',
+        setLangDesc: 'ترجمه زنده کل محیط مینی‌اپ و تغییر جهت صفحه',
+        setSvgUploadTitle: 'آپلود ایموجی SVG دکمه زبان',
+        setSvgUploadDesc: 'فایل .svg دلخواه خود را آپلود کنید تا روی دکمه زبان هدر قرار گیرد',
+        chooseSvgBtn: '+ آپلود فایل SVG از دستگاه',
+        resetSvgBtn: 'بازنشانی',
+        setSoundTitle: 'افکت‌های صوتی',
+        setSoundDesc: 'صدای چرخش گردونه، کلیک دکمه‌ها و دریافت گیفت',
+        setHapticTitle: 'بازخورد لرزشی (Haptic)',
+        setHapticDesc: 'لرزش ظریف تلگرام هنگام تعامل',
+        setGlowTitle: 'نورپردازی نئونی پس‌زمینه',
+        setGlowDesc: 'افکت درخشش مدرن در صفحات',
+        demoTopupTitle: 'شارژ آزمایشی استارز',
+        demoTopupDesc: 'افزودن ۵۰۰ استارز رایگان برای تست گردونه و خرید گیفت',
+        navWheel: 'گردونه',
+        navGifts: 'گیفت‌ها',
+        navWithdraw: 'برداشت',
+        navSettings: 'تنظیمات',
+        modalSavedTitle: 'گیفت ذخیره شده',
+        modalReceivedTitle: 'گیفت دریافت شده',
+        modalShopTitle: 'ارسال یا خرید گیفت',
+        modalSavedSub: 'این گیفت را به پروفایل خود اضافه کنید یا به استارز تبدیل نمایید.',
+        modalReceivedSub: 'می‌توانید این گیفت را در پروفایل نمایش دهید یا مخفی کنید.',
+        modalShopSub: 'این گیفت درخشان تلگرامی را به کلکسیون خود اضافه کنید.',
+        modalFrom: 'از طرف',
+        modalSendGiftBadge: 'ارسال گیفت',
+        modalDate: 'تاریخ',
+        modalValue: 'ارزش',
+        modalOkBtn: 'تأیید (OK)',
+        visVisibleText: 'این گیفت قابل مشاهده است.',
+        visHideLink: 'مخفی کردن از پروفایل >',
+        visHiddenText: 'این گیفت مخفی است.',
+        visShowLink: 'نمایش در پروفایل >',
+        convertBtnPrefix: 'تبدیل به',
+        starsWord: 'استارز',
+        buyBtnPrefix: 'خرید گیفت با',
+        toastNotEnoughStars: 'موجودی استارز کافی نیست! از بالا + را بزنید.',
+        toastWonPrefix: 'تبریک! شما برنده شدید:',
+        toastConverted: 'گیفت با موفقیت به استارز تبدیل شد!',
+        toastBought: 'گیفت به کلکسیون برداشت شما اضافه شد!',
+        toastSvgUploaded: 'ایموجی SVG جدید روی دکمه زبان اعمال شد!',
+        toastSvgInvalid: 'لطفاً یک فایل معتبر SVG انتخاب کنید.',
+        toastTopup: 'استارز به موجودی شما اضافه شد!',
+        toastSupportCopied: 'آیدی پشتیبانی @Unknownsupported کپی شد!'
+      },
+      en: {
+        appTitle: 'Telegram GiftStar',
+        appSubtitle: 'Official Gifts Mini App',
+        wheelNoEmptyBadge: '100% Win • Zero Empty Slots',
+        wheelTitle: 'Telegram Gifts Lucky Wheel',
+        wheelSubtitle: '50% chance to win Teddy Bear or Ribbon Heart on every spin!',
+        spinBtnShort: 'SPIN',
+        spinFreeLabel: 'Free Daily Spin (1 Left)',
+        spinPaidLabel: 'Spin Wheel (15 Stars)',
+        spinningLabel: 'Spinning...',
+        wheelHint: 'Extra spins cost 15 Stars • Won gifts are added straight to your withdraw list',
+        dropRatesTitle: 'Transparent Wheel Drop Rates',
+        recentWinsTitle: 'Recent Wheel Wins',
+        heroBadge: 'Telegram Exclusive Collection',
+        heroTitle: 'Send & Collect Glossy Gifts',
+        heroDesc: 'Tap any gift to open its native Telegram card, showcase on profile, or convert to Stars.',
+        storeCatalogTab: 'Gifts Store',
+        storeInventoryTab: 'My Gifts',
+        emptyInventory: 'You do not have any gifts in your collection yet!',
+        withdrawBadge: 'Direct Telegram Gift Withdrawal',
+        withdrawTitle: 'Withdraw Won Gifts',
+        withdrawSubtitle: 'Your collected gifts are ready to be transferred to your Telegram account.',
+        withdrawReadyGiftsLabel: 'Gifts Ready to Withdraw',
+        withdrawStarsBalanceLabel: 'Stars Balance',
+        supportCardTitle: 'How to Claim & Withdraw Gifts',
+        supportInstructionText: 'To withdraw your gifts, please message our official support @Unknownsupported on Telegram so your gifts can be sent to you right away.',
+        supportIdLabel: 'Telegram Support Username',
+        copyIdBtn: 'Copy ID',
+        messageSupportBtn: 'Message Support (@Unknownsupported)',
+        withdrawGiftsListTitle: 'Your Withdrawable Gifts',
+        winMoreGiftsBtn: 'Win More Gifts',
+        settingsTitle: 'Mini App Settings',
+        settingsSubtitle: 'Customize language, sound, visual glow, and custom SVG icon',
+        setLangTitle: 'App Language',
+        setLangDesc: 'Live full-interface translation and layout direction',
+        setSvgUploadTitle: 'Upload Language Button SVG',
+        setSvgUploadDesc: 'Upload your custom .svg icon to display on the header language button',
+        chooseSvgBtn: '+ Upload SVG File from Device',
+        resetSvgBtn: 'Reset',
+        setSoundTitle: 'Sound Effects',
+        setSoundDesc: 'Wheel ticking, button clicks, and win fanfare',
+        setHapticTitle: 'Haptic Feedback',
+        setHapticDesc: 'Subtle Telegram vibration on interactions',
+        setGlowTitle: 'Ambient Neon Glow',
+        setGlowDesc: 'Modern glowing orbs in the background',
+        demoTopupTitle: 'Demo Stars Top-Up',
+        demoTopupDesc: 'Add 500 free Stars to test spinning and buying gifts',
+        navWheel: 'Wheel',
+        navGifts: 'Gifts',
+        navWithdraw: 'Withdraw',
+        navSettings: 'Settings',
+        modalSavedTitle: 'Saved Gift',
+        modalReceivedTitle: 'Received Gift',
+        modalShopTitle: 'Telegram Gift',
+        modalSavedSub: 'Add this gift to your profile or convert it to Stars.',
+        modalReceivedSub: 'You can add this gift to your profile or hide it.',
+        modalShopSub: 'Purchase this glossy Telegram gift for your collection.',
+        modalFrom: 'From',
+        modalSendGiftBadge: 'send a gift',
+        modalDate: 'Date',
+        modalValue: 'Value',
+        modalOkBtn: 'OK',
+        visVisibleText: 'This gift is visible.',
+        visHideLink: 'Hide from profile >',
+        visHiddenText: 'This gift is hidden.',
+        visShowLink: 'Show on Profile >',
+        convertBtnPrefix: 'Convert to',
+        starsWord: 'Stars',
+        buyBtnPrefix: 'Buy Gift for',
+        toastNotEnoughStars: 'Not enough Stars! Tap + at the top to add Stars.',
+        toastWonPrefix: 'Congrats! You won:',
+        toastConverted: 'Gift converted to Stars!',
+        toastBought: 'Gift added to your collection!',
+        toastSvgUploaded: 'Custom SVG applied to language button!',
+        toastSvgInvalid: 'Please select a valid .svg file.',
+        toastTopup: 'Stars added to your balance!',
+        toastSupportCopied: 'Support username @Unknownsupported copied!'
+      },
+      ru: {
+        appTitle: 'Telegram GiftStar',
+        appSubtitle: 'Мини-приложение подарков',
+        wheelNoEmptyBadge: '100% Выигрыш • Без пустых ячеек',
+        wheelTitle: 'Колесо Фортуны Подарков',
+        wheelSubtitle: 'Шанс 50% выиграть Мишку Тедди или Сердце с лентой при каждом вращении!',
+        spinBtnShort: 'КРУТИТЬ',
+        spinFreeLabel: 'Бесплатное вращение (1 доступно)',
+        spinPaidLabel: 'Крутить колесо (15 Звёзд)',
+        spinningLabel: 'Вращается...',
+        wheelHint: 'Доп. вращение — 15 Звёзд • Подарки сразу добавляются в список вывода',
+        dropRatesTitle: 'Шансы выпадения призов',
+        recentWinsTitle: 'Последние выигрыши',
+        heroBadge: 'Эксклюзивная коллекция',
+        heroTitle: 'Отправляйте и собирайте подарки',
+        heroDesc: 'Нажмите на подарок, чтобы открыть карточку Telegram, показать в профиле или обменять на Звёзды.',
+        storeCatalogTab: 'Магазин',
+        storeInventoryTab: 'Мои подарки',
+        emptyInventory: 'В вашей коллекции пока нет подарков!',
+        withdrawBadge: 'Прямой вывод подарков Telegram',
+        withdrawTitle: 'Вывод выигранных подарков',
+        withdrawSubtitle: 'Собранные подарки готовы к отправке на ваш аккаунт Telegram.',
+        withdrawReadyGiftsLabel: 'Подарки к выводу',
+        withdrawStarsBalanceLabel: 'Баланс Звёзд',
+        supportCardTitle: 'Инструкция по выводу подарков',
+        supportInstructionText: 'Чтобы вывести ваши подарки, пожалуйста, напишите в нашу официальную поддержку @Unknownsupported в Telegram, и мы сразу отправим их вам.',
+        supportIdLabel: 'Аккаунт поддержки Telegram',
+        copyIdBtn: 'Копировать',
+        messageSupportBtn: 'Написать в поддержку (@Unknownsupported)',
+        withdrawGiftsListTitle: 'Ваши подарки для вывода',
+        winMoreGiftsBtn: 'Выиграть ещё',
+        settingsTitle: 'Настройки приложения',
+        settingsSubtitle: 'Язык, звук, неоновая подсветка и загрузка своего SVG',
+        setLangTitle: 'Язык интерфейса',
+        setLangDesc: 'Мгновенный перевод всего приложения',
+        setSvgUploadTitle: 'Загрузить SVG для кнопки языка',
+        setSvgUploadDesc: 'Загрузите свой .svg файл для кнопки смены языка в шапке',
+        chooseSvgBtn: '+ Выбрать SVG файл',
+        resetSvgBtn: 'Сброс',
+        setSoundTitle: 'Звуковые эффекты',
+        setSoundDesc: 'Звук вращения колеса, нажатий кнопок и победы',
+        setHapticTitle: 'Виброотклик (Haptic)',
+        setHapticDesc: 'Тактильная вибрация Telegram',
+        setGlowTitle: 'Неоновое свечение',
+        setGlowDesc: 'Атмосферная подсветка фона',
+        demoTopupTitle: 'Демо-пополнение Звёзд',
+        demoTopupDesc: 'Добавить 500 бесплатных Звёзд для проверки колеса',
+        navWheel: 'Колесо',
+        navGifts: 'Подарки',
+        navWithdraw: 'Вывод',
+        navSettings: 'Настройки',
+        modalSavedTitle: 'Сохранённый подарок',
+        modalReceivedTitle: 'Полученный подарок',
+        modalShopTitle: 'Подарок Telegram',
+        modalSavedSub: 'Добавьте этот подарок в профиль или обменяйте на Звёзды.',
+        modalReceivedSub: 'Вы можете показать этот подарок в профиле или скрыть его.',
+        modalShopSub: 'Добавьте этот яркий подарок Telegram в свою коллекцию.',
+        modalFrom: 'От кого',
+        modalSendGiftBadge: 'подарок',
+        modalDate: 'Дата',
+        modalValue: 'Ценность',
+        modalOkBtn: 'ОК',
+        visVisibleText: 'Этот подарок виден.',
+        visHideLink: 'Скрыть из профиля >',
+        visHiddenText: 'Этот подарок скрыт.',
+        visShowLink: 'Показать в профиле >',
+        convertBtnPrefix: 'Обменять на',
+        starsWord: 'Звёзд',
+        buyBtnPrefix: 'Купить за',
+        toastNotEnoughStars: 'Недостаточно Звёзд! Нажмите + сверху.',
+        toastWonPrefix: 'Поздравляем! Вы выиграли:',
+        toastConverted: 'Подарок обменян на Звёзды!',
+        toastBought: 'Подарок добавлен в вашу коллекцию!',
+        toastSvgUploaded: 'Ваш SVG установлен на кнопку языка!',
+        toastSvgInvalid: 'Пожалуйста, выберите корректный .svg файл.',
+        toastTopup: 'Звёзды зачислены на баланс!',
+        toastSupportCopied: 'Юзернейм поддержки @Unknownsupported скопирован!'
+      }
+    };
+
+    /* ========================================================================
+       5. APPLICATION STATE & TELEGRAM WEBAPP INITIALIZATION
+       ======================================================================== */
+    const state = {
+      lang: 'fa',
+      stars: 250,
+      freeSpins: 1,
+      isSpinning: false,
+      currentRotation: 0,
+      customLangSvg: null,
+      settings: {
+        sound: true,
+        haptic: true,
+        glow: true
+      },
+      inventory: [
+        {
+          uid: 'gift-init-1',
+          key: 'rose',
+          type: 'saved',
+          sender: null,
+          message: '',
+          date: '24 Jun 2025 at 00:15',
+          value: 25,
+          convertValue: 21,
+          visible: true
+        },
+        {
+          uid: 'gift-init-2',
+          key: 'heart',
+          type: 'received',
+          sender: 'ALi',
+          message: 'تولدت مبارک',
+          date: '02 Aug 2025 at 09:03',
+          value: 15,
+          convertValue: 13,
+          visible: true
+        }
+      ],
+      wheelHistory: [
+        { svgKey: 'teddy', label: { fa: 'خرس تدی تلگرامی', en: 'Plush Teddy Bear', ru: 'Плюшевый мишка' }, time: '14:04' },
+        { svgKey: 'heart', label: { fa: 'قلب با روبان طلایی', en: 'Golden Ribbon Heart', ru: 'Сердце с лентой' }, time: '13:58' }
+      ],
+      activeModal: null
+    };
+
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+      try {
+        tg.ready();
+        tg.expand();
+        if (tg.setHeaderColor) tg.setHeaderColor('#0e1621');
+        if (tg.setBackgroundColor) tg.setBackgroundColor('#0e1621');
+      } catch (e) {}
+    }
+
+    function triggerHaptic(type = 'light') {
+      if (!state.settings.haptic) return;
+      if (tg && tg.HapticFeedback) {
+        try {
+          if (type === 'success') tg.HapticFeedback.notificationOccurred('success');
+          else if (type === 'warning') tg.HapticFeedback.notificationOccurred('warning');
+          else tg.HapticFeedback.impactOccurred(type);
+        } catch (e) {}
+      } else if (navigator.vibrate) {
+        navigator.vibrate(type === 'success' ? [30, 40, 30] : 12);
+      }
+    }
+
+    /* ========================================================================
+       6. ENHANCED WEB AUDIO API SOUND ENGINE (CLICKS, TICKS, FANFARE, COINS)
+       ======================================================================== */
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // Crisp tactile UI click sound on button press
+    function playClickSound() {
+      if (!state.settings.sound) return;
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(520, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.035);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.04);
+    }
+
+    // Coin/Star sparkle chime when converting or topping up Stars
+    function playCoinSound() {
+      if (!state.settings.sound) return;
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      [987.77, 1318.51].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        const start = ctx.currentTime + i * 0.065;
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.14, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.26);
+      });
+    }
+
+    // Lucky Wheel ratchet tick sound
+    function playTickSound() {
+      if (!state.settings.sound) return;
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(720, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(210, ctx.currentTime + 0.042);
+      gain.gain.setValueAtTime(0.16, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.042);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.048);
+    }
+
+    // Celebratory Win Fanfare
+    function playWinSound(isJackpot = false) {
+      if (!state.settings.sound) return;
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const notes = isJackpot ? [523.25, 659.25, 783.99, 1046.5, 1318.5] : [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        const start = ctx.currentTime + idx * 0.085;
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.18, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.36);
+      });
+    }
+
+    /* ========================================================================
+       7. MULTILINGUAL ENGINE & CUSTOM SVG UPLOAD HANDLER
+       ======================================================================== */
+    function t(key) {
+      return (I18N[state.lang] && I18N[state.lang][key]) || I18N.en[key] || key;
+    }
+
+    function setLanguage(lang, silent = false) {
+      state.lang = lang;
+      const htmlEl = document.documentElement;
+      htmlEl.lang = lang;
+      htmlEl.dir = lang === 'fa' ? 'rtl' : 'ltr';
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (I18N[lang][key]) {
+          el.textContent = I18N[lang][key];
+        }
+      });
+
+      document.getElementById('current-lang-code').textContent = lang.toUpperCase();
+      updateLangButtonIcon();
+
+      ['fa', 'en', 'ru'].forEach(code => {
+        const checkEl = document.getElementById(`check-${code}`);
+        if (checkEl) checkEl.classList.toggle('hidden', code !== lang);
+
+        const setBtn = document.getElementById(`set-lang-btn-${code}`);
+        if (setBtn) {
+          if (code === lang) {
+            setBtn.className = 'py-2.5 px-2 rounded-2xl border border-tg-blue bg-tg-blue/15 text-xs font-bold text-white flex flex-col items-center gap-1.5 transition';
+          } else {
+            setBtn.className = 'py-2.5 px-2 rounded-2xl border border-white/10 bg-tg-card text-xs font-bold text-tg-hint flex flex-col items-center gap-1.5 transition';
+          }
+        }
+      });
+
+      document.getElementById('lang-menu').classList.add('hidden');
+
+      updateSpinButtonLabel();
+      renderDropRates();
+      renderWheelHistory();
+      renderStoreCatalog();
+      renderInventory();
+      renderWithdrawSection();
+      drawLuckyWheel();
+      if (!silent) {
+        playClickSound();
+        triggerHaptic('light');
+      }
+    }
+
+    function toggleLangMenu() {
+      document.getElementById('lang-menu').classList.toggle('hidden');
+      playClickSound();
+      triggerHaptic('light');
+    }
+
+    function updateLangButtonIcon() {
+      const iconContainer = document.getElementById('current-lang-icon');
+      const settingsPreview = document.getElementById('settings-svg-preview');
+      const svgMarkup = state.customLangSvg || SVG_ASSETS[`flag_${state.lang}`];
+      if (iconContainer) iconContainer.innerHTML = svgMarkup;
+      if (settingsPreview) settingsPreview.innerHTML = svgMarkup;
+    }
+
+    function handleSvgUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      if (!file.name.toLowerCase().endsWith('.svg') && file.type !== 'image/svg+xml') {
+        showToast(t('toastSvgInvalid'), 'warning');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const rawText = e.target.result;
+        if (typeof rawText === 'string' && rawText.includes('<svg')) {
+          const cleaned = rawText
+            .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+            .replace(/<svg/i, '<svg class="w-full h-full object-contain"');
+          state.customLangSvg = cleaned;
+          updateLangButtonIcon();
+          showToast(t('toastSvgUploaded'), 'success');
+          playCoinSound();
+          triggerHaptic('success');
+        } else {
+          showToast(t('toastSvgInvalid'), 'warning');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function resetCustomSvg() {
+      state.customLangSvg = null;
+      const input = document.getElementById('svg-file-input');
+      if (input) input.value = '';
+      updateLangButtonIcon();
+      playClickSound();
+      triggerHaptic('light');
+    }
+
+    /* ========================================================================
+       8. LUCKY WHEEL CANVAS RENDERING (PURE VECTOR SVG GRAPHICS, ZERO EMOJIS)
+       ======================================================================== */
+    function drawLuckyWheel() {
+      const canvas = document.getElementById('lucky-wheel-canvas');
+      if (!canvas) return;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const size = rect.width || 300;
+      canvas.width = size * dpr;
+      canvas.height = size * dpr;
+
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const cx = size / 2;
+      const cy = size / 2;
+      const radius = size / 2 - 4;
+      const count = WHEEL_SEGMENTS.length;
+      const arc = (Math.PI * 2) / count;
+
+      ctx.clearRect(0, 0, size, size);
+
+      WHEEL_SEGMENTS.forEach((seg, i) => {
+        const startAngle = state.currentRotation + i * arc;
+        const endAngle = startAngle + arc;
+
+        // Slice Background
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = seg.color;
+        ctx.fill();
+
+        // Slice Border
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.stroke();
+
+        // Outer Rim Highlight
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius - 3, startAngle + 0.03, endAngle - 0.03);
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = seg.accent;
+        ctx.stroke();
+
+        // Slice Vector SVG Icon + Label Text
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(startAngle + arc / 2);
+
+        const img = wheelSvgImages[seg.svgKey];
+        const iconSize = size * 0.125;
+        if (img && img.complete) {
+          ctx.save();
+          ctx.translate(radius * 0.72, 0);
+          ctx.rotate(Math.PI / 2);
+          ctx.drawImage(img, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
+          ctx.restore();
+        }
+
+        ctx.font = `700 ${Math.round(size * 0.035)}px Vazirmatn, Inter, sans-serif`;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(seg.label[state.lang], radius * 0.42, 0);
+
+        ctx.restore();
+      });
+
+      // Decorative Rim Studs
+      for (let i = 0; i < count * 2; i++) {
+        const a = state.currentRotation + (i * Math.PI) / count;
+        const sx = cx + Math.cos(a) * (radius - 3);
+        const sy = cy + Math.sin(a) * (radius - 3);
+        ctx.beginPath();
+        ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fill();
+      }
+    }
+
+    function pickWeightedSegmentIndex() {
+      const totalWeight = WHEEL_SEGMENTS.reduce((sum, s) => sum + s.weight, 0); // 100
+      let rand = Math.random() * totalWeight;
+      for (let i = 0; i < WHEEL_SEGMENTS.length; i++) {
+        if (rand < WHEEL_SEGMENTS[i].weight) {
+          return i;
+        }
+        rand -= WHEEL_SEGMENTS[i].weight;
+      }
+      return 0;
+    }
+
+    function spinLuckyWheel() {
+      if (state.isSpinning) return;
+
+      const spinCost = 15;
+      if (state.freeSpins > 0) {
+        state.freeSpins -= 1;
+      } else if (state.stars >= spinCost) {
+        state.stars -= spinCost;
+        updateBalanceUI();
+      } else {
+        showToast(t('toastNotEnoughStars'), 'warning');
+        triggerHaptic('warning');
+        return;
+      }
+
+      playClickSound();
+      state.isSpinning = true;
+      updateSpinButtonLabel();
+      triggerHaptic('medium');
+
+      const chosenIndex = pickWeightedSegmentIndex();
+      const count = WHEEL_SEGMENTS.length;
+      const arc = (Math.PI * 2) / count;
+
+      const sliceCenterOffset = chosenIndex * arc + arc / 2;
+      const jitter = (Math.random() - 0.5) * (arc * 0.45);
+      const targetNormalized = -Math.PI / 2 - sliceCenterOffset + jitter;
+
+      const currentMod = ((state.currentRotation % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      const targetMod = ((targetNormalized % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      let delta = targetMod - currentMod;
+      if (delta <= 0) delta += Math.PI * 2;
+
+      const fullSpins = 6 + Math.floor(Math.random() * 3);
+      const totalRotationChange = fullSpins * Math.PI * 2 + delta;
+
+      const startRotation = state.currentRotation;
+      const duration = 4300;
+      const startTime = performance.now();
+      let lastSliceIdx = -1;
+
+      function animateWheel(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 4.2);
+
+        state.currentRotation = startRotation + totalRotationChange * easeOut;
+        drawLuckyWheel();
+
+        const pointerAngle = ((-Math.PI / 2 - state.currentRotation) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+        const currentSliceIdx = Math.floor(pointerAngle / arc);
+        if (currentSliceIdx !== lastSliceIdx) {
+          lastSliceIdx = currentSliceIdx;
+          playTickSound();
+          triggerHaptic('light');
+          const pointerEl = document.getElementById('wheel-pointer');
+          if (pointerEl) {
+            pointerEl.classList.remove('wheel-pointer-tick');
+            void pointerEl.offsetWidth;
+            pointerEl.classList.add('wheel-pointer-tick');
+          }
+        }
+
+        if (progress < 1) {
+          requestAnimationFrame(animateWheel);
+        } else {
+          state.isSpinning = false;
+          updateSpinButtonLabel();
+          handleWheelWin(WHEEL_SEGMENTS[chosenIndex]);
+        }
+      }
+
+      requestAnimationFrame(animateWheel);
+    }
+
+    function handleWheelWin(segment) {
+      const isJackpot = segment.id === 'stars500' || segment.id === 'stars200';
+      playWinSound(isJackpot);
+      triggerHaptic('success');
+      launchConfetti(isJackpot ? 130 : 75);
+
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      state.wheelHistory.unshift({
+        svgKey: segment.svgKey,
+        label: segment.label,
+        time: timeStr
+      });
+      if (state.wheelHistory.length > 5) state.wheelHistory.pop();
+      renderWheelHistory();
+
+      if (segment.type === 'stars') {
+        state.stars += segment.starAmount;
+        updateBalanceUI();
+        renderWithdrawSection();
+        showToast(`${t('toastWonPrefix')} ${segment.label[state.lang]}`, 'success');
+      } else {
+        const newGift = {
+          uid: 'gift-' + Date.now(),
+          key: segment.giftKey,
+          type: 'received',
+          sender: 'Lucky Wheel',
+          message: 'Won on Telegram Lucky Wheel',
+          date: formatTelegramDate(now),
+          value: segment.starValue,
+          convertValue: Math.max(1, Math.floor(segment.starValue * 0.85)),
+          visible: true
+        };
+        state.inventory.unshift(newGift);
+        renderInventory();
+        renderWithdrawSection();
+        showToast(`${t('toastWonPrefix')} ${segment.label[state.lang]}`, 'success');
+
+        setTimeout(() => {
+          openGiftModal('inventory', newGift);
+        }, 450);
+      }
+    }
+
+    function updateSpinButtonLabel() {
+      const labelEl = document.getElementById('spin-btn-label');
+      if (!labelEl) return;
+      if (state.isSpinning) {
+        labelEl.textContent = t('spinningLabel');
+      } else if (state.freeSpins > 0) {
+        labelEl.textContent = t('spinFreeLabel');
+      } else {
+        labelEl.textContent = t('spinPaidLabel');
+      }
+    }
+
+    function renderDropRates() {
+      const grid = document.getElementById('drop-rates-grid');
+      if (!grid) return;
+      grid.innerHTML = WHEEL_SEGMENTS.map(seg => `
+        <div class="flex items-center justify-between bg-tg-bg/65 border border-white/5 rounded-2xl px-3 py-2">
+          <span class="flex items-center gap-2 font-semibold text-white truncate">
+            <span class="w-5 h-5 inline-flex shrink-0">${SVG_ASSETS[seg.svgKey]}</span>
+            <span class="truncate">${seg.label[state.lang]}</span>
+          </span>
+          <span class="text-[11px] font-extrabold px-2 py-0.5 rounded-lg ${seg.weight >= 25 ? 'bg-pink-500/20 text-pink-300' : seg.weight <= 9 ? 'bg-amber-400/20 text-amber-300' : 'bg-tg-blue/20 text-tg-blue'}">
+            ${seg.weight}%
+          </span>
+        </div>
+      `).join('');
+    }
+
+    function renderWheelHistory() {
+      const list = document.getElementById('wheel-history-list');
+      if (!list) return;
+      list.innerHTML = state.wheelHistory.map(item => `
+        <div class="flex items-center justify-between bg-tg-bg/50 rounded-xl px-3 py-2 border border-white/5">
+          <span class="flex items-center gap-2 font-semibold text-white">
+            <span class="w-5 h-5 inline-flex shrink-0">${SVG_ASSETS[item.svgKey]}</span>
+            <span>${item.label[state.lang]}</span>
+          </span>
+          <span class="text-[11px] text-tg-hint font-mono">${item.time}</span>
+        </div>
+      `).join('');
+    }
+
+    /* ========================================================================
+       9. STORE, INVENTORY, WITHDRAW SECTION & TELEGRAM GIFT MODAL
+       ======================================================================== */
+    function renderStoreCatalog() {
+      const container = document.getElementById('store-catalog-view');
+      if (!container) return;
+      container.innerHTML = GIFT_CATALOG.map(item => `
+        <div onclick="openShopGift('${item.key}')" class="tg-card-elevated rounded-3xl p-4 flex flex-col items-center text-center cursor-pointer relative overflow-hidden">
+          <span class="absolute top-3 ltr:right-3 rtl:left-3 px-2 py-0.5 rounded-full bg-tg-blue/15 text-tg-blue text-[10px] font-bold">
+            ${item.tag[state.lang]}
+          </span>
+          <div class="w-24 h-24 my-1 gift-float">
+            ${SVG_ASSETS[item.key]}
+          </div>
+          <h3 class="text-xs sm:text-sm font-extrabold text-white mt-1 line-clamp-1">${item.name[state.lang]}</h3>
+          <div class="mt-2.5 inline-flex items-center gap-1.5 bg-amber-400/15 border border-amber-400/25 px-3 py-1 rounded-full">
+            <span class="w-3.5 h-3.5 inline-flex">${SVG_ASSETS.star}</span>
+            <span class="text-xs font-extrabold text-amber-300">${item.price}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderInventory() {
+      const grid = document.getElementById('inventory-grid');
+      const emptyMsg = document.getElementById('empty-inventory-msg');
+      const badge = document.getElementById('inventory-count-badge');
+      if (badge) badge.textContent = state.inventory.length;
+
+      if (!grid) return;
+      if (state.inventory.length === 0) {
+        grid.innerHTML = '';
+        emptyMsg.classList.remove('hidden');
+        return;
+      }
+      emptyMsg.classList.add('hidden');
+
+      grid.innerHTML = state.inventory.map(gift => {
+        const meta = GIFT_CATALOG.find(c => c.key === gift.key) || GIFT_CATALOG[0];
+        return `
+          <div onclick="openInventoryGift('${gift.uid}')" class="tg-card-elevated rounded-3xl p-4 flex flex-col items-center text-center cursor-pointer relative">
+            <span class="absolute top-3 ltr:right-3 rtl:left-3 w-2.5 h-2.5 rounded-full ${gift.visible ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-tg-hint/40'}"></span>
+            <div class="w-24 h-24 my-1 gift-float">
+              ${SVG_ASSETS[gift.key]}
+            </div>
+            <h3 class="text-xs sm:text-sm font-extrabold text-white mt-1 line-clamp-1">${meta.name[state.lang]}</h3>
+            <div class="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-amber-300">
+              <span class="w-3.5 h-3.5 inline-flex">${SVG_ASSETS.star}</span>
+              <span>${gift.value}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderWithdrawSection() {
+      const giftsGrid = document.getElementById('withdraw-gifts-grid');
+      const giftsCountEl = document.getElementById('withdraw-gifts-count');
+      const starsCountEl = document.getElementById('withdraw-stars-count');
+
+      if (giftsCountEl) giftsCountEl.textContent = state.inventory.length;
+      if (starsCountEl) starsCountEl.textContent = state.stars;
+
+      if (!giftsGrid) return;
+      if (state.inventory.length === 0) {
+        giftsGrid.innerHTML = `<div class="col-span-2 text-center py-8 text-xs text-tg-hint bg-tg-surface rounded-3xl border border-white/5">${t('emptyInventory')}</div>`;
+        return;
+      }
+
+      giftsGrid.innerHTML = state.inventory.map(gift => {
+        const meta = GIFT_CATALOG.find(c => c.key === gift.key) || GIFT_CATALOG[0];
+        return `
+          <div onclick="openInventoryGift('${gift.uid}')" class="tg-card-elevated rounded-3xl p-3.5 flex flex-col items-center text-center cursor-pointer relative">
+            <div class="w-20 h-20 gift-float">${SVG_ASSETS[gift.key]}</div>
+            <div class="mt-1.5 text-xs font-extrabold text-white line-clamp-1">${meta.name[state.lang]}</div>
+            <div class="mt-1.5 inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 bg-amber-400/10 px-2.5 py-0.5 rounded-full">
+              <span class="w-3 h-3 inline-flex">${SVG_ASSETS.star}</span>
+              <span>${gift.value}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function copySupportUsername() {
+      const username = '@Unknownsupported';
+      const tempInput = document.createElement('input');
+      tempInput.value = username;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      try {
+        document.execCommand('copy');
+      } catch (e) {}
+      document.body.removeChild(tempInput);
+
+      playClickSound();
+      triggerHaptic('success');
+      showToast(t('toastSupportCopied'), 'success');
+    }
+
+    function setStoreSubtab(sub) {
+      const isCatalog = sub === 'catalog';
+      document.getElementById('store-catalog-view').classList.toggle('hidden', !isCatalog);
+      document.getElementById('store-inventory-view').classList.toggle('hidden', isCatalog);
+
+      document.getElementById('subtab-catalog-btn').className = isCatalog
+        ? 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition bg-tg-blue text-white shadow'
+        : 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition text-tg-hint hover:text-white';
+
+      document.getElementById('subtab-inventory-btn').className = !isCatalog
+        ? 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition bg-tg-blue text-white shadow flex items-center justify-center gap-1.5'
+        : 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition text-tg-hint hover:text-white flex items-center justify-center gap-1.5';
+
+      playClickSound();
+      triggerHaptic('light');
+    }
+
+    function openShopGift(key) {
+      const item = GIFT_CATALOG.find(g => g.key === key);
+      if (item) openGiftModal('shop', item);
+    }
+
+    function openInventoryGift(uid) {
+      const gift = state.inventory.find(g => g.uid === uid);
+      if (gift) openGiftModal('inventory', gift);
+    }
+
+    function openGiftModal(mode, item) {
+      state.activeModal = { mode, item };
+      const backdrop = document.getElementById('gift-modal-backdrop');
+      const giftKey = item.key;
+
+      document.getElementById('modal-gift-svg').innerHTML = SVG_ASSETS[giftKey];
+      document.getElementById('modal-star-icon').innerHTML = SVG_ASSETS.star;
+      document.getElementById('modal-sec-star-icon').innerHTML = SVG_ASSETS.star;
+
+      const rowFrom = document.getElementById('modal-row-from');
+      const rowMsg = document.getElementById('modal-row-message');
+      const visBar = document.getElementById('modal-visibility-bar');
+      const secBtnText = document.getElementById('modal-secondary-btn-text');
+
+      if (mode === 'inventory') {
+        const isReceived = item.type === 'received';
+        document.getElementById('modal-gift-title').textContent = isReceived ? t('modalReceivedTitle') : t('modalSavedTitle');
+        document.getElementById('modal-gift-subtitle').textContent = isReceived ? t('modalReceivedSub') : t('modalSavedSub');
+        document.getElementById('modal-gift-date').textContent = item.date;
+        document.getElementById('modal-gift-value').textContent = item.value;
+
+        if (isReceived && item.sender) {
+          rowFrom.classList.remove('hidden');
+          document.getElementById('modal-sender-name').textContent = item.sender;
+        } else {
+          rowFrom.classList.add('hidden');
+        }
+
+        if (item.message) {
+          rowMsg.classList.remove('hidden');
+          rowMsg.textContent = item.message;
+        } else {
+          rowMsg.classList.add('hidden');
+        }
+
+        visBar.classList.remove('hidden');
+        updateModalVisibilityText(item.visible);
+
+        secBtnText.textContent = `${t('convertBtnPrefix')} ${item.convertValue} ${t('starsWord')}`;
+      } else {
+        document.getElementById('modal-gift-title').textContent = item.name[state.lang];
+        document.getElementById('modal-gift-subtitle').textContent = t('modalShopSub');
+        document.getElementById('modal-gift-date').textContent = formatTelegramDate(new Date());
+        document.getElementById('modal-gift-value').textContent = item.price;
+
+        rowFrom.classList.add('hidden');
+        rowMsg.classList.add('hidden');
+        visBar.classList.add('hidden');
+
+        secBtnText.textContent = `${t('buyBtnPrefix')} ${item.price} ${t('starsWord')}`;
+      }
+
+      backdrop.classList.add('active');
+      playClickSound();
+      triggerHaptic('light');
+    }
+
+    function updateModalVisibilityText(isVisible) {
+      document.getElementById('modal-vis-status').textContent = isVisible ? t('visVisibleText') : t('visHiddenText');
+      document.getElementById('modal-vis-toggle-btn').textContent = isVisible ? t('visHideLink') : t('visShowLink');
+    }
+
+    function toggleCurrentGiftVisibility() {
+      if (!state.activeModal || state.activeModal.mode !== 'inventory') return;
+      const gift = state.activeModal.item;
+      gift.visible = !gift.visible;
+      updateModalVisibilityText(gift.visible);
+      renderInventory();
+      renderWithdrawSection();
+      playClickSound();
+      triggerHaptic('light');
+    }
+
+    function handleModalSecondaryAction() {
+      if (!state.activeModal) return;
+      const { mode, item } = state.activeModal;
+
+      if (mode === 'inventory') {
+        state.stars += item.convertValue;
+        state.inventory = state.inventory.filter(g => g.uid !== item.uid);
+        updateBalanceUI();
+        renderInventory();
+        renderWithdrawSection();
+        closeGiftModal();
+        showToast(`${t('toastConverted')} (+${item.convertValue})`, 'success');
+        playCoinSound();
+        triggerHaptic('success');
+      } else {
+        if (state.stars < item.price) {
+          showToast(t('toastNotEnoughStars'), 'warning');
+          triggerHaptic('warning');
+          return;
+        }
+        state.stars -= item.price;
+        const purchasedGift = {
+          uid: 'gift-' + Date.now(),
+          key: item.key,
+          type: 'saved',
+          sender: null,
+          message: '',
+          date: formatTelegramDate(new Date()),
+          value: item.price,
+          convertValue: item.convertStars,
+          visible: true
+        };
+        state.inventory.unshift(purchasedGift);
+        updateBalanceUI();
+        renderInventory();
+        renderWithdrawSection();
+        closeGiftModal();
+        showToast(t('toastBought'), 'success');
+        playWinSound(false);
+        triggerHaptic('success');
+        launchConfetti(50);
+      }
+    }
+
+    function closeGiftModal() {
+      document.getElementById('gift-modal-backdrop').classList.remove('active');
+      state.activeModal = null;
+      playClickSound();
+    }
+
+    function closeGiftModalOnBackdrop(e) {
+      if (e.target.id === 'gift-modal-backdrop') {
+        closeGiftModal();
+      }
+    }
+
+    /* ========================================================================
+       10. NAVIGATION, SETTINGS TOGGLES, TOASTS & CONFETTI PARTICLES
+       ======================================================================== */
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-view').forEach(sec => sec.classList.remove('active'));
+      const activeSec = document.getElementById(`tab-${tabName}`);
+      if (activeSec) activeSec.classList.add('active');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.className = 'nav-btn flex flex-col items-center justify-center py-1.5 rounded-2xl text-tg-hint hover:text-white transition';
+      });
+      const activeBtn = document.getElementById(`nav-${tabName}`);
+      if (activeBtn) {
+        activeBtn.className = 'nav-btn flex flex-col items-center justify-center py-1.5 rounded-2xl text-tg-blue bg-tg-blue/10 transition';
+      }
+
+      if (tabName === 'wheel') {
+        setTimeout(drawLuckyWheel, 30);
+      }
+      playClickSound();
+      triggerHaptic('light');
+    }
+
+    function toggleSetting(key) {
+      state.settings[key] = !state.settings[key];
+      const sw = document.getElementById(`toggle-${key}`);
+      if (sw) sw.classList.toggle('on', state.settings[key]);
+
+      if (key === 'glow') {
+        document.documentElement.style.setProperty('--glow-opacity', state.settings.glow ? '0.45' : '0');
+      }
+      if (state.settings.sound) playClickSound();
+      triggerHaptic('light');
+    }
+
+    function topUpStars(amount) {
+      state.stars += amount;
+      updateBalanceUI();
+      renderWithdrawSection();
+      showToast(`+${amount} ${t('toastTopup')}`, 'success');
+      playCoinSound();
+      triggerHaptic('success');
+    }
+
+    function updateBalanceUI() {
+      document.getElementById('star-balance-display').textContent = state.stars;
+      const wdStars = document.getElementById('withdraw-stars-count');
+      if (wdStars) wdStars.textContent = state.stars;
+    }
+
+    function formatTelegramDate(d) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const day = String(d.getDate()).padStart(2, '0');
+      const mon = months[d.getMonth()];
+      const year = d.getFullYear();
+      const hrs = String(d.getHours()).padStart(2, '0');
+      const mins = String(d.getMinutes()).padStart(2, '0');
+      return `${day} ${mon} ${year} at ${hrs}:${mins}`;
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      const borderClass = type === 'success' ? 'border-emerald-400/40 text-emerald-200' : type === 'warning' ? 'border-amber-400/40 text-amber-200' : 'border-tg-blue/40 text-white';
+      toast.className = `tg-glass ${borderClass} px-4 py-2.5 rounded-2xl text-xs font-bold shadow-2xl text-center transition-all duration-300 transform -translate-y-2 opacity-0`;
+      toast.textContent = message;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('-translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('-translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 2800);
+    }
+
+    function launchConfetti(particleCount = 80) {
+      const canvas = document.getElementById('confetti-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const colors = ['#2ea6ff', '#ffbe2e', '#ff409a', '#34d399', '#a78bfa', '#f87171'];
+      const particles = Array.from({ length: particleCount }, () => ({
+        x: canvas.width / 2 + (Math.random() - 0.5) * 120,
+        y: canvas.height * 0.42,
+        vx: (Math.random() - 0.5) * 14,
+        vy: (Math.random() - 0.85) * 15,
+        size: Math.random() * 6 + 4,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.25,
+        life: 1
+      }));
+
+      function step() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let alive = false;
+        particles.forEach(p => {
+          if (p.life <= 0) return;
+          alive = true;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.35;
+          p.rot += p.vRot;
+          p.life -= 0.015;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.globalAlpha = Math.max(0, p.life);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.65);
+          ctx.restore();
+        });
+        if (alive) requestAnimationFrame(step);
+        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      requestAnimationFrame(step);
+    }
+
+    /* ========================================================================
+       11. INITIALIZATION ON WINDOW LOAD
+       ======================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      // Inject all Vector SVG UI Icons (Zero Emojis)
+      document.getElementById('header-star-icon').innerHTML = SVG_ASSETS.star;
+      document.getElementById('hero-featured-svg').innerHTML = SVG_ASSETS.heart;
+      document.getElementById('badge-target-icon').innerHTML = SVG_ASSETS.uiTarget;
+      document.getElementById('spin-btn-icon').innerHTML = SVG_ASSETS.uiWheel;
+      document.getElementById('rates-chart-icon').innerHTML = SVG_ASSETS.uiChart;
+      document.getElementById('badge-teddy-mini').innerHTML = SVG_ASSETS.teddy;
+      document.getElementById('badge-heart-mini').innerHTML = SVG_ASSETS.heart;
+      document.getElementById('hero-sparkle-icon').innerHTML = SVG_ASSETS.uiSparkle;
+
+      // Withdraw Tab Icons
+      document.getElementById('withdraw-badge-icon').innerHTML = SVG_ASSETS.uiWithdraw;
+      document.getElementById('withdraw-hero-icon').innerHTML = SVG_ASSETS.uiGift;
+      document.getElementById('withdraw-stat-gift-icon').innerHTML = SVG_ASSETS.uiGift;
+      document.getElementById('withdraw-stat-star-icon').innerHTML = SVG_ASSETS.star;
+      document.getElementById('support-headset-icon').innerHTML = SVG_ASSETS.uiSupport;
+      document.getElementById('support-tg-plane-icon').innerHTML = SVG_ASSETS.uiWithdraw;
+      document.getElementById('copy-support-icon').innerHTML = SVG_ASSETS.uiCopy;
+      document.getElementById('cta-plane-icon').innerHTML = SVG_ASSETS.uiWithdraw;
+
+      // Settings Icons
+      document.getElementById('set-globe-icon').innerHTML = SVG_ASSETS.uiGlobe;
+      document.getElementById('set-palette-icon').innerHTML = SVG_ASSETS.uiPalette;
+      document.getElementById('set-sound-icon').innerHTML = SVG_ASSETS.uiSound;
+      document.getElementById('set-haptic-icon').innerHTML = SVG_ASSETS.uiHaptic;
+      document.getElementById('set-glow-icon').innerHTML = SVG_ASSETS.uiSparkle;
+      document.getElementById('topup-btn-star-icon').innerHTML = SVG_ASSETS.star;
+
+      // Bottom Navigation Vector Icons
+      document.getElementById('nav-icon-wheel').innerHTML = SVG_ASSETS.uiWheel;
+      document.getElementById('nav-icon-store').innerHTML = SVG_ASSETS.uiGift;
+      document.getElementById('nav-icon-withdraw').innerHTML = SVG_ASSETS.uiWithdraw;
+      document.getElementById('nav-icon-settings').innerHTML = SVG_ASSETS.uiSettings;
+
+      ['fa', 'en', 'ru'].forEach(code => {
+        const optEl = document.getElementById(`flag-opt-${code}`);
+        const setEl = document.getElementById(`set-flag-${code}`);
+        if (optEl) optEl.innerHTML = SVG_ASSETS[`flag_${code}`];
+        if (setEl) setEl.innerHTML = SVG_ASSETS[`flag_${code}`];
+      });
+
+      // Close language menu when clicking outside
+      document.addEventListener('click', (e) => {
+        const btn = document.getElementById('lang-dropdown-btn');
+        const menu = document.getElementById('lang-menu');
+        if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
+          menu.classList.add('hidden');
+        }
+      });
+
+      window.addEventListener('resize', drawLuckyWheel);
+
+      // Preload SVG images for Canvas Wheel, then initialize Persian UI
+      preloadWheelSvgImages(() => {
+        drawLuckyWheel();
+      });
+      setLanguage('fa', true);
+    });
+  </script>
+</body>
+</html>
